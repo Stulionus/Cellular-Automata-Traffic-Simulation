@@ -24,6 +24,7 @@ def main():
     # Generate roads and plot the result
     city.generateRoads()
     city.plot_city_grid()
+    city.animate_traffic(10,1)
 
 if __name__ == "__main__":
     main()

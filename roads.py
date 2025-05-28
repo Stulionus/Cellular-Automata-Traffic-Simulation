@@ -3,8 +3,9 @@ import matplotlib.pyplot as plt
 import random
 
 class City:
-    def __init__(self, width, height, block_size_range=(5, 10), base_road_width=2,
-                 wide_road_width=4, highway_width=6, road_remove=0.2):
+    def __init__(self, width, height, block_size_range=(5,10),
+                 base_road_width=2, wide_road_width=4, highway_width=6,
+                 road_remove=0.2):
         self.width = width
         self.height = height
         self.block_size_range = block_size_range
@@ -12,140 +13,165 @@ class City:
         self.wide_road_width = wide_road_width
         self.highway_width = highway_width
         self.road_remove = road_remove
-        self.grid = np.ones((self.height, self.width)) * -1
-        self.intersections = np.zeros((self.height, self.width), dtype=bool)
-        self.original_roads = np.zeros((self.height, self.width), dtype=bool)
 
-    def _set_with_intersections(self, y_slice, x_slice, road_value, record_original=False):
+        self.grid = np.full((height, width), -1.0)
+        self.original_roads = np.zeros((height, width), bool)
+        self.horizontal_roads = np.zeros((height, width), bool)
+        self.vertical_roads   = np.zeros((height, width), bool)
+        self.intersections    = np.zeros((height, width), bool)
+
+        self.light_A = np.zeros((height, width), bool)
+        self.light_B = np.zeros((height, width), bool)
+
+    def _set_road(self, y_slice, x_slice, road_value, record_original=False):
         ys, ye = y_slice.start or 0, y_slice.stop or self.height
         xs, xe = x_slice.start or 0, x_slice.stop or self.width
-    
         current = self.grid[ys:ye, xs:xe]
-        original = current.copy()
-    
-        is_existing_road = (original == 2) | (original == 4) | (original == 6)
-    
-        road_priority = {2: 1, 4: 2, 6: 3}
-        get_priority = np.vectorize(lambda v: road_priority.get(v, 0))
-    
-        if not record_original:
-            original_mask = self.original_roads[ys:ye, xs:xe]
-            intersection_mask = is_existing_road & ~original_mask
-        else:
-            intersection_mask = is_existing_road
+        prio   = {2:1, 4:2, 6:3}
+        cur_p  = np.vectorize(prio.get)(current, 0)
+        new_p  = prio.get(road_value, 0)
+        if record_original:
             self.original_roads[ys:ye, xs:xe] = True
-    
-        current_priority = get_priority(original)
-        new_priority = road_priority.get(road_value, 0)
-        upgrade_mask = new_priority > current_priority
-    
-        self.grid[ys:ye, xs:xe][upgrade_mask] = road_value
-    
-        if np.any(intersection_mask):
-            for dy in range(ys, ye):
-                for dx in range(xs, xe):
-                    if intersection_mask[dy - ys, dx - xs]:
-                        if 0 <= dy < self.height and 0 <= dx < self.width:
-                            self.intersections[dy, dx] = True
-    
-        
+        mask = new_p > cur_p
+        self.grid[ys:ye, xs:xe][mask] = road_value
 
-    def _find_largest_gap(self, positions, length):
-        positions = sorted(positions)
-        positions = [0] + positions + [length]
-        max_gap = 0
-        best_start = 0
-        for i in range(len(positions) - 1):
-            gap = positions[i+1] - positions[i]
-            if gap > max_gap:
-                max_gap = gap
-                best_start = positions[i]
-        return best_start + max_gap // 2
+    def _spaced_positions(self, length):
+        pos = random.randint(*self.block_size_range)
+        out = []
+        while pos < length - self.base_road_width:
+            out.append(pos)
+            pos += random.randint(*self.block_size_range)
+        return out
 
     def generateRoads(self):
-        def spaced_positions(length, min_spacing, max_spacing):
-            positions = []
-            pos = random.randint(min_spacing, max_spacing)
-            while pos < length - self.base_road_width:
-                positions.append(pos)
-                step = random.randint(min_spacing, max_spacing)
-                pos += step
-            return positions
+        h_pos = self._spaced_positions(self.height)
+        v_pos = self._spaced_positions(self.width)
 
-        horizontal_positions = spaced_positions(self.height, *self.block_size_range)
-        vertical_positions = spaced_positions(self.width, *self.block_size_range)
+        for y in h_pos:
+            self._set_road(slice(y, y+self.base_road_width),
+                           slice(0, self.width), 2, True)
+            self.horizontal_roads[y:y+self.base_road_width, :] = True
 
-        for y in horizontal_positions:
-            self._set_with_intersections(slice(y, y+self.base_road_width), slice(0, self.width), 2, record_original=True)
+        for x in v_pos:
+            self._set_road(slice(0, self.height),
+                           slice(x, x+self.base_road_width), 2, True)
+            self.vertical_roads[:, x:x+self.base_road_width] = True
 
-        for x in vertical_positions:
-            self._set_with_intersections(slice(0, self.height), slice(x, x+self.base_road_width), 2, record_original=True)
-
-        axis = random.choice(['h', 'v']) if horizontal_positions and vertical_positions else ('h' if horizontal_positions else 'v')
-
+        axis = random.choice(['h','v']) if h_pos and v_pos else ('h' if h_pos else 'v')
         if axis == 'h':
-            highway_y = random.choice(horizontal_positions)
-            hy_center = highway_y + self.base_road_width // 2
-            hy_start = max(0, hy_center - self.highway_width // 2)
-            hy_end = min(self.height, hy_start + self.highway_width)
-            self._set_with_intersections(slice(hy_start, hy_end), slice(0, self.width), 6)
-            remaining = [y for y in horizontal_positions if y != highway_y]
-            for y in random.sample(remaining, min(len(remaining), random.randint(1, 3))):
-                col_center = y + self.base_road_width // 2
-                col_start = max(0, col_center - self.wide_road_width // 2)
-                col_end = min(self.height, col_start + self.wide_road_width)
-                self._set_with_intersections(slice(col_start, col_end), slice(0, self.width), 4)
-        else:
-            highway_x = random.choice(vertical_positions)
-            hx_center = highway_x + self.base_road_width // 2
-            hx_start = max(0, hx_center - self.highway_width // 2)
-            hx_end = min(self.width, hx_start + self.highway_width)
-            self._set_with_intersections(slice(0, self.height), slice(hx_start, hx_end), 6)
-            remaining = [x for x in vertical_positions if x != highway_x]
-            for x in random.sample(remaining, min(len(remaining), random.randint(1, 3))):
-                col_center = x + self.base_road_width // 2
-                col_start = max(0, col_center - self.wide_road_width // 2)
-                col_end = min(self.width, col_start + self.wide_road_width)
-                self._set_with_intersections(slice(0, self.height), slice(col_start, col_end), 4)
+            y0 = random.choice(h_pos)
+            start = max(0, y0 + self.base_road_width//2 - self.highway_width//2)
+            end   = min(self.height, start + self.highway_width)
+            self._set_road(slice(start, end), slice(0, self.width), 6)
+            self.horizontal_roads[start:end, :] = True
 
-        for y in horizontal_positions:
-            for i in range(len(vertical_positions) - 1):
-                x1 = vertical_positions[i] + self.base_road_width
-                x2 = vertical_positions[i+1]
-                segment = self.grid[y:y+self.base_road_width, x1:x2]
-                if np.all(segment == 2) and random.random() < self.road_remove:
+            for x0 in random.sample(v_pos, min(len(v_pos), random.randint(1,3))):
+                c0 = max(0, x0 + self.base_road_width//2 - self.wide_road_width//2)
+                c1 = min(self.width, c0 + self.wide_road_width)
+                self._set_road(slice(0, self.height), slice(c0, c1), 4)
+                self.vertical_roads[:, c0:c1] = True
+        else:
+            x0 = random.choice(v_pos)
+            start = max(0, x0 + self.base_road_width//2 - self.highway_width//2)
+            end   = min(self.width, start + self.highway_width)
+            self._set_road(slice(0, self.height), slice(start, end), 6)
+            self.vertical_roads[:, start:end] = True
+
+            for y0 in random.sample(h_pos, min(len(h_pos), random.randint(1,3))):
+                c0 = max(0, y0 + self.base_road_width//2 - self.wide_road_width//2)
+                c1 = min(self.height, c0 + self.wide_road_width)
+                self._set_road(slice(c0, c1), slice(0, self.width), 4)
+                self.horizontal_roads[c0:c1, :] = True
+
+        for y in h_pos:
+            for i in range(len(v_pos)-1):
+                x1 = v_pos[i] + self.base_road_width
+                x2 = v_pos[i+1]
+                seg = self.grid[y:y+self.base_road_width, x1:x2]
+                if np.all(seg==2) and random.random()<self.road_remove:
                     self.grid[y:y+self.base_road_width, x1:x2] = -1
                     self.original_roads[y:y+self.base_road_width, x1:x2] = False
+                    self.horizontal_roads[y:y+self.base_road_width, x1:x2] = False
 
-
-        for x in vertical_positions:
-            for i in range(len(horizontal_positions) - 1):
-                y1 = horizontal_positions[i] + self.base_road_width
-                y2 = horizontal_positions[i+1]
-                segment = self.grid[y1:y2, x:x+self.base_road_width]
-                if np.all(segment == 2) and random.random() < self.road_remove:
+        for x in v_pos:
+            for i in range(len(h_pos)-1):
+                y1 = h_pos[i] + self.base_road_width
+                y2 = h_pos[i+1]
+                seg = self.grid[y1:y2, x:x+self.base_road_width]
+                if np.all(seg==2) and random.random() < self.road_remove:
                     self.grid[y1:y2, x:x+self.base_road_width] = -1
                     self.original_roads[y1:y2, x:x+self.base_road_width] = False
-        
+                    self.vertical_roads[y1:y2, x:x+self.base_road_width] = False
+
+        self.intersections = self.horizontal_roads & self.vertical_roads
+        self._assign_light_masks()
+
+    def _assign_light_masks(self):
+        h, w = self.intersections.shape
+        self.light_A[:] = False
+        self.light_B[:] = False
+        visited = np.zeros_like(self.intersections, bool)
+
+        for i in range(h):
+            for j in range(w):
+                if self.intersections[i, j] and not visited[i, j]:
+                    stack = [(i, j)]
+                    comp  = []
+                    visited[i, j] = True
+                    while stack:
+                        r, c = stack.pop()
+                        comp.append((r, c))
+                        for dr, dc in ((1,0),(-1,0),(0,1),(0,-1)):
+                            rr, cc = r+dr, c+dc
+                            if 0<=rr<h and 0<=cc<w \
+                               and self.intersections[rr,cc] \
+                               and not visited[rr,cc]:
+                                visited[rr,cc] = True
+                                stack.append((rr,cc))
+
+                    rows = [r for r,_ in comp]
+                    cols = [c for _,c in comp]
+                    rmin, rmax = min(rows), max(rows)
+                    cmin, cmax = min(cols), max(cols)
+                    rmid = (rmin + rmax + 1)//2
+                    cmid = (cmin + cmax + 1)//2
+
+                    for r, c in comp:
+                        if (r < rmid and c < cmid) or (r >= rmid and c >= cmid):
+                            self.light_A[r, c] = True
+                        else:
+                            self.light_B[r, c] = True
+
+
+    def _build_rgb(self):
+        cmap = {-1:[250,250,250], 2:[180,180,180], 4:[100,100,100], 6:[0,0,0]}
+        rgb = np.zeros((self.height, self.width, 3), np.uint8)
+        for k,c in cmap.items():
+            rgb[self.grid==k] = c
+        return rgb
 
     def plot_city_grid(self):
-        color_map = {
-            -1: [250, 250, 250],  # block
-            2: [180, 180, 180],   # local road
-            4: [100, 100, 100],   # collector road
-            6: [0, 0, 0],         # highway
-        }
-
-        rgb_grid = np.zeros((self.height, self.width, 3), dtype=np.uint8)
-
-        for key, color in color_map.items():
-            mask = self.grid == key
-            rgb_grid[mask] = color
-
-        rgb_grid[self.intersections] = [255, 0, 0]
-
-        plt.figure(figsize=(10, 10))
-        plt.imshow(rgb_grid, origin='upper')
+        rgb = self._build_rgb()
+        rgb[self.intersections] = [255,0,0]
+        plt.figure(figsize=(10,10))
+        plt.imshow(rgb, origin='upper')
         plt.axis('off')
         plt.show()
 
+    def animate_traffic(self, steps, interval=0.5):
+        plt.ion()
+        fig, ax = plt.subplots(figsize=(10,10))
+        for t in range(steps):
+            base = self._build_rgb()
+            if t % 2 == 0:
+                base[self.light_A] = [  0,255,  0]
+                base[self.light_B] = [255,  0,  0]
+            else:
+                base[self.light_A] = [255,  0,  0]
+                base[self.light_B] = [  0,255,  0]
+            ax.clear()
+            ax.imshow(base, origin='upper')
+            ax.axis('off')
+            plt.pause(interval)
+        plt.ioff()
+        plt.show()
