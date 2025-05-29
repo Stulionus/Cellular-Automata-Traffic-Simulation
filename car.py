@@ -3,6 +3,7 @@ import random
 import math
 import heapq
 from grid import Grid
+from cell import Cell
 
 class Car:
     def __init__(self, car_id, start_pos, destination, city_grid, speed=1):
@@ -10,6 +11,10 @@ class Car:
         self.position = (start_pos[1], start_pos[0]) #x and y coordinate
         self.destination = self._select_random_destination()
         self.path_to_destination
+        self.reached = False
+        self.grid = city_grid
+        self.speed = speed
+        self.path = []
 
         self.parent_i = 0
         self.parent_j = 0
@@ -24,6 +29,7 @@ class Car:
 
         #add logic later
 
+    #Moves car based on speed limit, traffic light, occupied cells, and road structure.
     def update(self, traffic_light_A, traffic_light_B, occupied_cells, time_step):
         if self.reached:
             return
@@ -32,22 +38,24 @@ class Car:
             self.compute_path()
 
         current_y, current_x = self.position
-        cell = self.grid[current_y][current_x]
-        speed = cell.speed_limit if hasattr(cell, 'speed_limit') else self.default_speed
+        cell = self.grid.grid[current_y][current_x]
+        speed = getattr(cell, 'speed_limit', self.default_speed)
 
-        for step in range(speed):  # move up to `speed` steps along path
+        # Grid is 2D array. Grid[x][y].
+        # Cell to get all cell attributes.
+        for step in range(speed):  # move up to `speed` steps along path 1-3.
             next_index = time_step + step
             if next_index >= len(self.path):
                 break
-
             next_pos = self.path[next_index]
+            next_cell = self.grid.grid[y][x]
             y, x = next_pos
 
             # Only proceed if road & not occupied
-            if getattr(self.grid[y][x], 'is_road', False) and (y, x) not in occupied_cells:
-                # Check traffic light logic
-                if (traffic_light_A[y, x] and time_step % 2 == 0) or \
-                   (traffic_light_B[y, x] and time_step % 2 == 1):
+            # Check 1. intersection 2. on or off boolean value for traffic lights
+            # Check if the next grid/move is at an intersection because it will have to check at the light if it can move
+            if self.cell.get_cell_type() == 'road' and (y, x) not in occupied_cells and self.cell.get_cell_type() != 'intersection':
+                if self.grid.grid() == 'Off':
                     break
                 else:
                     self.position = next_pos
@@ -60,6 +68,7 @@ class Car:
     
     # is_within_grid: checks if a cell is within the grid coordinates and whether the current
     # cell is unblocked. Unblocked is set to 1 and Blocked is set to -1.
+    # A* Search Starts Below
     def is_within_grid(row, col):
         return (row >= 0) and (row <= ROW) and (col >= 0) and (col < COLUMN) and grid[row][col] == 1
     
@@ -69,28 +78,19 @@ class Car:
     #heuristic is calculated using euclidean distance to destination
     def calculate_heuristic_value(row, col, destination):
         return ((row - destination[0]) ** 2 + (col - destination[1]) ** 2) ** 0.5
+
+    # helper function. returns path from destination back to source
+    def trace_path(self, cell_details, destination):
+    path = []
+    row, col = destination
+    while not (cell_details[row][col].parent_i == row and cell_details[row][col].parent_j == col):
+        path.append((row, col))
+        row, col = cell_details[row][col].parent_i, cell_details[row][col].parent_j
+    path.append((row, col))
+    path.reverse()
+    return path
+
     
-    def trace_path(cell_details, destination):
-        print("The Path: ")
-        path = []
-        row = destination[0]
-        col = destination[1]
-
-        #essentially backtracks. If the current cell is not the start cell, will keep moving backwards
-        #based on the parent pointers given.
-        while not (cell_details[row][col].parent_i == row and cell_details[row][col].parent_j == col):
-            path.append((row, col))
-            temp_row = cell_details[row][col].parent_i
-            temp_col = cell_details[row][col].parent_j
-            row = temp_row
-            col = temp_col
-        
-        path.append((row,col))
-        path.reverse()
-        for i in path:
-            print(i, end = " ")
-        print()
-
     def a_star_search(grid, source, destination):
         # first checks whether destination or source coordinates are within the grid and valid
         if not is_within_grid(source[0], source[1]) or not is_within_grid(destination[0], destination[1]):
