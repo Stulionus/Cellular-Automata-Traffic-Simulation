@@ -8,7 +8,10 @@ class Cell:
     def addMove(self, move):
         self.canMove.append(move)
 
-    def add_possible_moves(self, city, intersections, horizontal, vertical):
+    def getPossibleMoves(self):
+        return self.canMove
+
+    def addPossibleMoves(self, city, intersections, horizontal, vertical):
         x, y = self.x, self.y
         grid = city.grid
 
