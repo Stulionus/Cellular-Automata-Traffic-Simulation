@@ -9,7 +9,7 @@ class Car:
     def __init__(self, car_id, start_pos, destination, city_grid, speed=1):
         self.car_id = car_id
         self.position = (start_pos[1], start_pos[0]) #x and y coordinate
-        self.destination = self._select_random_destination()
+        self.destination = destination
         self.path_to_destination
         self.reached = False
         self.grid = city_grid
@@ -81,14 +81,14 @@ class Car:
 
     # helper function. returns path from destination back to source
     def trace_path(self, cell_details, destination):
-    path = []
-    row, col = destination
-    while not (cell_details[row][col].parent_i == row and cell_details[row][col].parent_j == col):
+        path = []
+        row, col = destination
+        while not (cell_details[row][col].parent_i == row and cell_details[row][col].parent_j == col):
+            path.append((row, col))
+            row, col = cell_details[row][col].parent_i, cell_details[row][col].parent_j
         path.append((row, col))
-        row, col = cell_details[row][col].parent_i, cell_details[row][col].parent_j
-    path.append((row, col))
-    path.reverse()
-    return path
+        path.reverse()
+        return path
 
     
     def a_star_search(grid, source, destination):

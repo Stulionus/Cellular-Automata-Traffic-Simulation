@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 from roads import City
 from cell import Cell
-from car import car
+from car import Car
 
 class Grid:
     def __init__(self, 
@@ -27,7 +27,7 @@ class Grid:
         self.even_chance = event_chance
         self.cars = []
 
-        local_coords = np.argwhere(self.city.grid == 2)
+        
 
         self.city = City(
             width=self.width,
@@ -39,13 +39,15 @@ class Grid:
             road_remove=self.road_remove_probability
         )
 
+        local_coords = np.argwhere(self.city.grid == 2)
+        
         self.city.generateRoads()
 
-        self.roadsToGrid(self.city)
+        self.roadsToGrid()
 
         for row in self.cells:
             for cell in row:
-                if cell and cell.cell_type == "road":
+                if cell and cell.cell_type == "s-road":
                     if np.random.rand() < cars_prob:
                         cid = len(self.cars)
                         start = (cell.x, cell.y)
@@ -55,22 +57,37 @@ class Grid:
                         else:
                             dest = start
 
-                        c = car(cid, start, dest, self)
+                        c = Car(cid, start, dest, self.cells)
                         self.cars.append(c)
 
-    def roadsToGrid(self, city):
+    def roadsToGrid(self):
         for y in range(self.height):
             for x in range(self.width):
-                if city.grid[y,x] == -1:
-                    continue
+                value = self.city.grid[y, x]
 
-                c = Cell(x, y, city.grid[y, x])
-                c.addPossibleMoves(city,
-                                   city.intersections,
-                                   city.horizontal_roads,
-                                   city.vertical_roads)
+                if value == -1:
+                    continue  
+
+                
+                if self.city.intersections[y, x]:
+                    cell_type = "intersection"
+                elif value ==2:
+                    cell_type = "s-road"
+                elif value ==4:
+                    cell_type = "m-road"
+                elif value ==6:
+                    cell_type = "l-road"
+                else:
+                    cell_type = "non-road"
+
+                c = Cell(x, y, cell_type)
+                c.addPossibleMoves(self.city,
+                                   self.city.intersections,
+                                   self.city.horizontal_roads,
+                                   self.city.vertical_roads)
 
                 self.cells[y][x] = c
+
 
     def add_Random_events(self, event_chance = 0.1):
         for c in self.cells:
@@ -85,7 +102,32 @@ class Grid:
                 c.update()
 
     def switch_traffic_light(self):
-        
-        # for c in self.cells:
-        #     if c.cell_type == "intersection":
-        #         c.switch_traffic_light()
+        mask = self.city.intersection_mask
+        for y, x in zip(*np.where(mask)):
+            cell = self.get_cell_at(x, y)
+            if cell:
+                cell.switch_traffic_light()
+
+
+    def plot(self):
+        img = np.ones((self.height, self.width, 3), dtype=np.uint8) * 255
+
+        for y in range(self.height):
+            for x in range(self.width):
+                cell = self.cells[y][x]
+                if cell:
+                    if cell.cell_type == "s-road":
+                        img[y, x] = [200, 200, 200]
+                    elif cell.cell_type == "m-road":
+                        img[y, x] = [100, 100, 100]
+                    elif cell.cell_type == "l-road":
+                        img[y, x] = [0, 0, 0]  
+                    elif cell.cell_type == "intersection":
+                        img[y, x] = [255, 0, 0]     
+
+        plt.figure(figsize=(10, 10))
+        plt.imshow(img, origin='upper')
+        plt.title("Grid View: Road Classes")
+        plt.axis('off')
+        plt.show()
+
