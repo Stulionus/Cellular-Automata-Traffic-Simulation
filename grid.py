@@ -81,6 +81,11 @@ class Grid:
                                    self.city.horizontal_roads,
                                    self.city.vertical_roads)
 
+                if self.city.light_A[y,x]:
+                    c.OnOrOff = True
+                else:
+                    c.OnOrOff = False
+
                 self.cells[y][x] = c
 
 
