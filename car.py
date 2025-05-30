@@ -2,7 +2,7 @@ import numpy as np
 import random
 import math
 import heapq
-from grid import Grid
+#from grid import Grid
 from cell import Cell
 
 class Car:
@@ -10,7 +10,7 @@ class Car:
         self.car_id = car_id
         self.position = (start_pos[1], start_pos[0]) #x and y coordinate
         self.destination = destination
-        self.path_to_destination
+        #self.path_to_destination
         self.reached = False
         self.grid = city_grid
         self.speed = speed

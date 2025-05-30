@@ -12,7 +12,7 @@ class Grid:
                  height, 
                  road_remove_probability = 0.1, 
                  event_chance = 0.1, 
-                 cars_prob= 0.1):
+                 cars_prob= 0.01):
         
 
         self.cells = [[None for _ in range(width)]for _ in range(height)]
@@ -47,7 +47,7 @@ class Grid:
 
         for row in self.cells:
             for cell in row:
-                if cell and cell.cell_type == "s-road":
+                if cell and cell.cell_type == 2:
                     if np.random.rand() < cars_prob:
                         cid = len(self.cars)
                         start = (cell.x, cell.y)
@@ -70,17 +70,13 @@ class Grid:
 
                 
                 if self.city.intersections[y, x]:
-                    cell_type = "intersection"
-                elif value ==2:
-                    cell_type = "s-road"
-                elif value ==4:
-                    cell_type = "m-road"
-                elif value ==6:
-                    cell_type = "l-road"
+                    cell_type = 3
+                elif value in(2,4,6):
+                    cell_type = value
                 else:
-                    cell_type = "non-road"
+                    cell_type = -1
 
-                c = Cell(x, y, cell_type)
+                c = Cell(x, y, cell_type,self.city.intersections)
                 c.addPossibleMoves(self.city,
                                    self.city.intersections,
                                    self.city.horizontal_roads,
@@ -116,13 +112,13 @@ class Grid:
             for x in range(self.width):
                 cell = self.cells[y][x]
                 if cell:
-                    if cell.cell_type == "s-road":
+                    if cell.cell_type == 2:
                         img[y, x] = [200, 200, 200]
-                    elif cell.cell_type == "m-road":
+                    elif cell.cell_type == 4:
                         img[y, x] = [100, 100, 100]
-                    elif cell.cell_type == "l-road":
+                    elif cell.cell_type == 6:
                         img[y, x] = [0, 0, 0]  
-                    elif cell.cell_type == "intersection":
+                    elif cell.cell_type == 3:
                         img[y, x] = [255, 0, 0]     
 
         plt.figure(figsize=(10, 10))
