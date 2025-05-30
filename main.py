@@ -1,4 +1,5 @@
 from roads import City
+import time
 
 def main():
     # Configuration
@@ -10,6 +11,7 @@ def main():
     highway_width = 6
     road_remove_probability = 0.2
 
+    start = time.time()
     # Create city instance
     city = City(
         width=width,
@@ -20,11 +22,16 @@ def main():
         highway_width=highway_width,
         road_remove=road_remove_probability
     )
+    time.sleep(1)
+    end = time.time()
 
+    print(f"Total runtime of the program is {end - start} seconds")
     # Generate roads and plot the result
     city.generateRoads()
     city.plot_city_grid()
     city.animate_traffic(10,1)
+
+    
 
 if __name__ == "__main__":
     main()

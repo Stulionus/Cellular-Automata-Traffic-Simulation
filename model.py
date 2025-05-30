@@ -30,7 +30,7 @@ class Model:
 
     def simulate(self):
         for i in range(self.time):
-            self.grid.update()
+            self.grid.update(i % self.traffic_light_time == 0)
 
     def simulate_w_plot(self):
         for i in range(self.time):

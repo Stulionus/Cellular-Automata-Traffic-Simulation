@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 from roads import City
 from cell import Cell
-#from cars import car
+from car import car
 
 class Grid:
     def __init__(self, 
@@ -25,6 +25,9 @@ class Grid:
         highway_width = 6
         self.road_remove_probability = road_remove_probability
         self.even_chance = event_chance
+        self.cars = []
+
+        local_coords = np.argwhere(self.city.grid == 2)
 
         self.city = City(
             width=self.width,
@@ -40,12 +43,20 @@ class Grid:
 
         self.roadsToGrid(self.city)
 
-        cars = []
-        for cell in self.cells:
-            if cell.cell_type == "road":
-                #add slight chance of spawning car
-                if np.random.rand() < cars_prob:
-                    cars.append(spawnCar(cell.x, cell.y))
+        for row in self.cells:
+            for cell in row:
+                if cell and cell.cell_type == "road":
+                    if np.random.rand() < cars_prob:
+                        cid = len(self.cars)
+                        start = (cell.x, cell.y)
+                        if len(local_coords) > 0:
+                            y, x = local_coords[np.random.choice(len(local_coords))]
+                            dest = (x, y)
+                        else:
+                            dest = start
+
+                        c = car(cid, start, dest, self)
+                        self.cars.append(c)
 
     def roadsToGrid(self, city):
         for y in range(self.height):
@@ -67,6 +78,14 @@ class Grid:
                 c.cell_type = "non-road"
                 self.city.grid[c.y, c.x] = -1
 
+    def update(self, switch = False):
+        self.switch_traffic_light()
+        for c in self.cells:
+            if c.cell_type == "road":
+                c.update()
 
-
+    def switch_traffic_light(self):
         
+        # for c in self.cells:
+        #     if c.cell_type == "intersection":
+        #         c.switch_traffic_light()
