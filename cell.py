@@ -14,6 +14,7 @@ class Cell:
 
         # Occupancy tracking
         self.occupied = False  # True if a car is in the cell or it's a red-light intersection
+        self.occupied_by_car = False
 
         # Car time tracking
         self.time_spent_log = []
