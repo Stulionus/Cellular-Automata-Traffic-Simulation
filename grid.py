@@ -1,147 +1,134 @@
-class Cell:
-    def __init__(self, x, y, cell_type, intersections):
-        self.x = x
-        self.y = y
+import numpy as np
+import numpy.ma as ma
+import matplotlib.pyplot as plt
 
-        # Determine if the cell is an intersection
-        if 0 <= y < intersections.shape[0] and 0 <= x < intersections.shape[1] and intersections[y, x]:
-            self.cell_type = 3
-        else:
-            self.cell_type = cell_type
+from roads import City
+from cell import Cell
+from car import Car
 
-        self.canMove = []
-        self.OnOrOff = False  # Traffic light state: True = green, False = red
+class Grid:
+    def __init__(self, 
+                 width, 
+                 height, 
+                 road_remove_probability = 0.1, 
+                 event_chance = 0.1, 
+                 cars_prob= 0.01):
+        
 
-        # Occupancy tracking
-        self.occupied = False  # True if a car is in the cell or it's a red-light intersection
+        self.cells = [[None for _ in range(width)]for _ in range(height)]
+        
+        self.width = width
+        self.height =  height
+        block_density = (10, 30)
+        base_road_width = 2
+        wide_road_width = 4
+        highway_width = 6
+        self.road_remove_probability = road_remove_probability
+        self.even_chance = event_chance
+        self.cars = []
 
-        # Car time tracking
-        self.time_spent_log = []
-        self.total_cars_passed = 0
 
-    # --- Getters & state togglers ---
-    def getCellType(self):
-        return self.cell_type
+        self.city = City(
+            width=self.width,
+            height=self.height,
+            block_size_range=block_density,
+            base_road_width=base_road_width,
+            wide_road_width=wide_road_width,
+            highway_width=highway_width,
+            road_remove=self.road_remove_probability
+        )
 
-    def getOnOrOff(self):
-        return self.OnOrOff
+        local_coords = np.argwhere(self.city.grid == 2)
+        
+        self.city.generateRoads()
 
-    def isOccupied(self):
-        return self.occupied
+        self.roadsToGrid()
 
-    def setOnOrOff(self, switch):
-        """Set traffic light state: True = green, False = red."""
-        if self.cell_type == 3:
-            self.OnOrOff = switch
-            # Update occupancy depending on light state
-            if switch:  # Green light
-                if not self.occupied_by_car:
-                    self.occupied = False
-            else:  # Red light
-                self.occupied = True
+        for row in self.cells:
+            for cell in row:
+                if cell and cell.cell_type == 2:
+                    if np.random.rand() < cars_prob:
+                        cid = len(self.cars)
+                        start = (cell.x, cell.y)
+                        if len(local_coords) > 0:
+                            y, x = local_coords[np.random.choice(len(local_coords))]
+                            dest = (x, y)
+                        else:
+                            dest = start
+
+                        c = Car(cid, start, dest, self.cells)
+                        self.cars.append(c)
+
+    def roadsToGrid(self):
+        for y in range(self.height):
+            for x in range(self.width):
+                value = self.city.grid[y, x]
+
+                if value == -1:
+                    continue  
+
+                
+                if self.city.intersections[y, x]:
+                    cell_type = 3
+                elif value in(2,4,6):
+                    cell_type = value
+                else:
+                    cell_type = -1
+
+                c = Cell(x, y, cell_type,self.city.intersections)
+                c.addPossibleMoves(self.city,
+                                   self.city.intersections,
+                                   self.city.horizontal_roads,
+                                   self.city.vertical_roads)
+
+                if self.city.light_A[y,x]:
+                    c.OnOrOff = True
+                else:
+                    c.OnOrOff = False
+
+                self.cells[y][x] = c
+
+
+    def add_Random_events(self, event_chance = 0.1):
+        for c in self.cells:
+            if c.cell_type == 2 and np.random.rand() <  event_chance:
+                c.cell_type = -1
+                self.city.grid[c.y, c.x] = -1
+
+    def update(self, switch = False):
+        self.switch_traffic_light()
+        for c in self.cells:
+            if c.cell_type == 2:
+                c.update()
 
     def switch_traffic_light(self):
-        """Toggle the traffic light state and update occupancy accordingly."""
-        self.OnOrOff = not self.OnOrOff
-        if self.cell_type == 3:
-            if self.OnOrOff:  # Green
-                if not self.occupied_by_car:
-                    self.occupied = False
-            else:  # Red
-                self.occupied = True
+        mask = np.ma.mask_or(self.city.light_A, self.city.light_B)
+        for y, x in zip(*np.where(mask)):
+            cell = self.cells[y][x]
+            if cell:
+                cell.switch_traffic_light()
 
-    # --- Car movement & occupancy ---
-    def car_enters(self):
-        """Call when a car enters the cell."""
-        self.occupied = True
-        self.occupied_by_car = True
+    def plot(self):
+        img = np.ones((self.height, self.width, 3), dtype=np.uint8) * 255
 
-    def leaving(self):
-        """Call when a car leaves the cell. Clears occupancy only if light is green."""
-        self.occupied_by_car = False
-        if self.cell_type != 3 or self.OnOrOff:  # Either not an intersection or light is green
-            self.occupied = False
+        for y in range(self.height):
+            for x in range(self.width):
+                cell = self.cells[y][x]
+                if cell:
+                    if cell.cell_type == 2:
+                        img[y, x] = [200, 200, 200]
+                    elif cell.cell_type == 4:
+                        img[y, x] = [100, 100, 100]
+                    elif cell.cell_type == 6:
+                        img[y, x] = [0, 0, 0]  
+                    elif cell.cell_type == 3:
+                        if cell.getOnOrOff():
+                            img[y, x] = [0, 255, 0] 
+                        else:
+                            img[y, x] = [255, 0, 0]     
 
-    # --- Car movement logic ---
-    def addMove(self, move):
-        self.canMove.append(move)
-
-    def getPossibleMoves(self):
-        return self.canMove
-
-    # --- Car time tracking ---
-    def addTimeSpent(self, time_spent):
-        self.time_spent_log.append(time_spent)
-        self.total_cars_passed += 1
-
-    def getTimeLog(self):
-        return self.time_spent_log
-
-    def getTotalCarsPassed(self):
-        return self.total_cars_passed
-
-    # --- Move calculation ---
-    def addPossibleMoves(self, city, intersections, horizontal, vertical):
-        x, y = self.x, self.y
-        grid = city.grid
-
-        def in_bounds(x_, y_):
-            return 0 <= x_ < grid.shape[1] and 0 <= y_ < grid.shape[0]
-
-        def is_road(x_, y_):
-            return in_bounds(x_, y_) and (horizontal[y_, x_] or vertical[y_, x_])
-
-        def is_intersection(x_, y_):
-            return in_bounds(x_, y_) and intersections[y_, x_]
-
-        def is_land(x_, y_):
-            return in_bounds(x_, y_) and not (horizontal[y_, x_] or vertical[y_, x_]) and not intersections[y_, x_]
-
-        # Directions
-        directions = {
-            'NW': (-1, -1), 'N': (0, -1), 'NE': (1, -1),
-            'W': (-1, 0),               'E': (1, 0),
-            'SW': (-1, 1),  'S': (0, 1),  'SE': (1, 1)
-        }
-
-        # Classify all 8 neighbors
-        status = {}
-        for d, (dx, dy) in directions.items():
-            xx, yy = x + dx, y + dy
-            if not in_bounds(xx, yy):
-                status[d] = 'X'  # Out of bounds
-            elif is_intersection(xx, yy):
-                status[d] = 'I'
-            elif is_road(xx, yy):
-                status[d] = 'R'
-            else:
-                status[d] = 'L'
-
-        if self.cell_type == 3:
-            # Simplified logic — example patterns
-            if status['N'] in 'RI' and status['S'] in 'RI':
-                self.addMove((0, -1))  # North
-                self.addMove((0, 1))   # South
-            if status['E'] in 'RI' and status['W'] in 'RI':
-                self.addMove((1, 0))  # East
-                self.addMove((-1, 0))  # West
-
-            # T or corner logic
-            if status['N'] in 'RI' and status['E'] in 'RI':
-                self.addMove((0, -1))
-                self.addMove((1, 0))
-            if status['S'] in 'RI' and status['W'] in 'RI':
-                self.addMove((0, 1))
-                self.addMove((-1, 0))
-
-        elif self.cell_type == 1 or self.cell_type == 2:
-            if self.cell_type == 1:  # Horizontal road
-                if status['E'] in 'RI':
-                    self.addMove((1, 0))
-                if status['W'] in 'RI':
-                    self.addMove((-1, 0))
-            if self.cell_type == 2:  # Vertical road
-                if status['N'] in 'RI':
-                    self.addMove((0, -1))
-                if status['S'] in 'RI':
-                    self.addMove((0, 1))
+        plt.figure(figsize=(10, 10))
+        plt.imshow(img, origin='upper')
+        plt.title("Grid View: Road Classes")
+        plt.axis('off')
+        plt.show()
