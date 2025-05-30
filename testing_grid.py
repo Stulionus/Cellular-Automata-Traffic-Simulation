@@ -7,3 +7,5 @@ grid = Grid(200,200,road_remove_probability = 0.1,
 grid.plot()
 #print(grid.cells)
 print(grid.cars)
+grid.switch_traffic_light()
+grid.plot()

@@ -27,7 +27,6 @@ class Grid:
         self.even_chance = event_chance
         self.cars = []
 
-        
 
         self.city = City(
             width=self.width,
@@ -87,23 +86,22 @@ class Grid:
 
     def add_Random_events(self, event_chance = 0.1):
         for c in self.cells:
-            if c.cell_type == "road" and np.random.rand() <  event_chance:
-                c.cell_type = "non-road"
+            if c.cell_type == 2 and np.random.rand() <  event_chance:
+                c.cell_type = -1
                 self.city.grid[c.y, c.x] = -1
 
     def update(self, switch = False):
         self.switch_traffic_light()
         for c in self.cells:
-            if c.cell_type == "road":
+            if c.cell_type == 2:
                 c.update()
 
     def switch_traffic_light(self):
-        mask = self.city.intersection_mask
+        mask = self.city.intersections 
         for y, x in zip(*np.where(mask)):
-            cell = self.get_cell_at(x, y)
+            cell = self.cells[x][y]
             if cell:
                 cell.switch_traffic_light()
-
 
     def plot(self):
         img = np.ones((self.height, self.width, 3), dtype=np.uint8) * 255
@@ -119,7 +117,10 @@ class Grid:
                     elif cell.cell_type == 6:
                         img[y, x] = [0, 0, 0]  
                     elif cell.cell_type == 3:
-                        img[y, x] = [255, 0, 0]     
+                        if cell.getOnOrOff():
+                            img[y, x] = [0, 255, 0] 
+                        else:
+                            img[y, x] = [255, 0, 0]     
 
         plt.figure(figsize=(10, 10))
         plt.imshow(img, origin='upper')
