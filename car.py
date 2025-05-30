@@ -3,19 +3,21 @@ import random
 import math
 import heapq
 from cell import Cell
-#todo: change everything so that we are getting attributes from just the cell class
 
 class Car:
-    def __init__(self, car_id, start_pos, destination, city_grid, speed):
+    def __init__(self, car_id, start_pos, destination, city_grid):
         self.car_id = car_id
         self.position = (start_pos[1], start_pos[0]) #x and y coordinate of source
         self.destination = self._select_random_destination() #x and y coordinate of destination
         self.grid = city_grid
-        self.speed = speed
         self.path = []
         self.reached = False
         self.time_spent = 0
         self.move_probability = .90
+
+        #Calls the cell class in order to call cell function
+        start_cell = self.grid[self.position[0]][self.position[1]]
+        self.speed = start_cell.getCellType() / 2
 
         rows, cols = len(city_grid), len(city_grid[0])
         self.parent_i = np.full((rows, cols), -1, dtype=int)
@@ -130,18 +132,13 @@ class Car:
         print(f"Car {self.car_id}: Destination not reachable")
         return []
 
-
-def update(self, traffic_light, occupied_cell, time_step, speed):
+def update(self, traffic_light, occupied_cell, time_step):
     if self.reached:
         return
     if not self.path:
         self.compute()
-
     current_y, current_x = self.position
-    cell = self.grid[current_y][current_x]
-    speed = cell.speed_limit if hasattr(cell, 'speed_limit') else self.speed
-
-    for step in range(speed):
+    for step in range(self.speed):
         next_index = time_step + step
         if next_index >= len(self.path):
             break
@@ -150,13 +147,13 @@ def update(self, traffic_light, occupied_cell, time_step, speed):
         y, x = next_pos
 
         if not self.is_within_grid(y, x):
-                break
+            break
         next_cell = self.grid[y][x]
         
         if random.random() > self.move_probability:
             break  
 
-        if next_cell.getCellType() == 3 and not next_cell.getOnOrOff(): #is an intersection and red light is False
+        if next_cell.getCellType == 3 and not next_cell.getOnOrOff(): #is an intersection and red light is False
             break
 
         if (y, x) in occupied_cell:
@@ -168,3 +165,4 @@ def update(self, traffic_light, occupied_cell, time_step, speed):
     self.time_spent += 1
     if self.position == self.destination:
         self.reached = True
+
