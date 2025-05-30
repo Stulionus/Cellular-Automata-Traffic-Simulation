@@ -52,4 +52,10 @@ class Grid:
                 c.addPossibleMoves(city, intersections, horizontal, vertical)
                 self.cells.append(c)
 
+    def add_Random_events(self, event_chance = 0.1):
+        for c in self.cells:
+            if c.cell_type == "road" and np.random.rand() <  event_chance:
+                c.cell_type = "non-road"
+                self.city.grid[c.y, c.x] = -1
+
         
