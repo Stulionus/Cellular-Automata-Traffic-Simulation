@@ -130,6 +130,7 @@ class Car:
         print(f"Car {self.car_id}: Destination not reachable")
         return []
 
+
 def update(self, traffic_light, occupied_cell, time_step, speed):
     if self.reached:
         return
@@ -148,10 +149,14 @@ def update(self, traffic_light, occupied_cell, time_step, speed):
         next_pos = self.path[next_index]
         y, x = next_pos
 
+        if not self.is_within_grid(y, x):
+                break
+        next_cell = self.grid[y][x]
+        
         if random.random() > self.move_probability:
             break  
 
-        if next_pos.cell.hasattribute('traffic_light') and traffic_light == 'red':
+        if next_cell.getCellType == 3 and not next_cell.getOnOrOff(): #is an intersection and red light is False
             break
 
         if (y, x) in occupied_cell:
@@ -163,4 +168,3 @@ def update(self, traffic_light, occupied_cell, time_step, speed):
     self.time_spent += 1
     if self.position == self.destination:
         self.reached = True
-
