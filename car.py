@@ -8,7 +8,7 @@ class Car:
     def __init__(self, car_id, start_pos, destination, city_grid):
         self.car_id = car_id
         self.position = (start_pos[1], start_pos[0]) #x and y coordinate of source
-        self.destination = self._select_random_destination() #x and y coordinate of destination
+        self.destination = destination #x and y coordinate of destination
         self.grid = city_grid
         self.path = []
         self.reached = False

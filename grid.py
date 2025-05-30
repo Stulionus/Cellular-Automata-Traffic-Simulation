@@ -56,7 +56,9 @@ class Grid:
                         else:
                             dest = start
 
+                        
                         c = Car(cid, start, dest, self.cells)
+                        self.cells[start[1]][start[0]].car_enters()
                         self.cars.append(c)
 
     def roadsToGrid(self):
@@ -85,6 +87,9 @@ class Grid:
                     c.OnOrOff = True
                 else:
                     c.OnOrOff = False
+
+                c.occupied_by_car= False
+                c.occupied = False
 
                 self.cells[y][x] = c
 
