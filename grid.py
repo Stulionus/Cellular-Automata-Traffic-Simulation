@@ -102,9 +102,9 @@ class Grid:
                 c.update()
 
     def switch_traffic_light(self):
-        mask = self.city.intersections 
+        mask = np.ma.mask_or(self.city.light_A, self.city.light_B)
         for y, x in zip(*np.where(mask)):
-            cell = self.cells[x][y]
+            cell = self.cells[y][x]
             if cell:
                 cell.switch_traffic_light()
 
