@@ -156,7 +156,7 @@ def update(self, traffic_light, occupied_cell, time_step, speed):
         if random.random() > self.move_probability:
             break  
 
-        if next_cell.getCellType == 3 and not next_cell.getOnOrOff(): #is an intersection and red light is False
+        if next_cell.getCellType() == 3 and not next_cell.getOnOrOff(): #is an intersection and red light is False
             break
 
         if (y, x) in occupied_cell:
