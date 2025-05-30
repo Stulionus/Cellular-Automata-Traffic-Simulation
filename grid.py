@@ -35,7 +35,7 @@ class Grid:
         for cell in self.cells:
             if cell.cell_type == "road":
                 #add slight chance of spawning car
-                spawnCar(cell.x, cell.y)
+                cars.append(spawnCar(cell.x, cell.y))
 
     def roadsToGrid(self, city):
         currentGrid = city.grid
