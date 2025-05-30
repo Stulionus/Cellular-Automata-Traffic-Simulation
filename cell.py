@@ -10,9 +10,12 @@ class Cell:
             self.cell_type = cell_type
 
         self.canMove = []
-        self.OnOrOff = False
+        self.OnOrOff = False  # Traffic light state: True = green, False = red
 
-        # New variables
+        # Occupancy tracking
+        self.occupied = False  # True if a car is in the cell or it's a red-light intersection
+
+        # Car time tracking
         self.time_spent_log = []
         self.total_cars_passed = 0
 
@@ -20,17 +23,46 @@ class Cell:
     def getCellType(self):
         return self.cell_type
 
-    def setOnOrOff(self, switch):
-        if self.cell_type == 3:
-            self.OnOrOff = switch
-
     def getOnOrOff(self):
         return self.OnOrOff
 
-    def switch_traffic_light(self):
-        self.OnOrOff = not self.OnOrOff
+    def isOccupied(self):
+        return self.occupied
 
-    # --- Car movement ---
+    def setOnOrOff(self, switch):
+        """Set traffic light state: True = green, False = red."""
+        if self.cell_type == 3:
+            self.OnOrOff = switch
+            # Update occupancy depending on light state
+            if switch:  # Green light
+                if not self.occupied_by_car:
+                    self.occupied = False
+            else:  # Red light
+                self.occupied = True
+
+    def switch_traffic_light(self):
+        """Toggle the traffic light state and update occupancy accordingly."""
+        self.OnOrOff = not self.OnOrOff
+        if self.cell_type == 3:
+            if self.OnOrOff:  # Green
+                if not self.occupied_by_car:
+                    self.occupied = False
+            else:  # Red
+                self.occupied = True
+
+    # --- Car movement & occupancy ---
+    def car_enters(self):
+        """Call when a car enters the cell."""
+        self.occupied = True
+        self.occupied_by_car = True
+
+    def leaving(self):
+        """Call when a car leaves the cell. Clears occupancy only if light is green."""
+        self.occupied_by_car = False
+        if self.cell_type != 3 or self.OnOrOff:  # Either not an intersection or light is green
+            self.occupied = False
+
+    # --- Car movement logic ---
     def addMove(self, move):
         self.canMove.append(move)
 
@@ -39,16 +71,13 @@ class Cell:
 
     # --- Car time tracking ---
     def addTimeSpent(self, time_spent):
-        """Records the time a car spent at this cell."""
         self.time_spent_log.append(time_spent)
         self.total_cars_passed += 1
 
     def getTimeLog(self):
-        """Returns a list of all time durations cars spent at this cell."""
         return self.time_spent_log
 
     def getTotalCarsPassed(self):
-        """Returns total number of cars that have passed through this cell."""
         return self.total_cars_passed
 
     # --- Move calculation ---
@@ -88,18 +117,13 @@ class Cell:
             else:
                 status[d] = 'L'
 
-        def add_if_open(dx, dy):
-            xx, yy = x + dx, y + dy
-            if in_bounds(xx, yy):
-                self.addMove((dx, dy))
-
         if self.cell_type == 3:
             # Simplified logic — example patterns
             if status['N'] in 'RI' and status['S'] in 'RI':
                 self.addMove((0, -1))  # North
                 self.addMove((0, 1))   # South
             if status['E'] in 'RI' and status['W'] in 'RI':
-                self.addMove((1, 0))   # East
+                self.addMove((1, 0))  # East
                 self.addMove((-1, 0))  # West
 
             # T or corner logic
@@ -110,7 +134,7 @@ class Cell:
                 self.addMove((0, 1))
                 self.addMove((-1, 0))
 
-        elif self.cell_type == 1 or self.cell_type == 2:  # 1 = horizontal, 2 = vertical
+        elif self.cell_type == 1 or self.cell_type == 2:
             if self.cell_type == 1:  # Horizontal road
                 if status['E'] in 'RI':
                     self.addMove((1, 0))
