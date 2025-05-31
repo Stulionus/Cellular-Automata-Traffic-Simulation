@@ -6,6 +6,8 @@ from cell import Cell
 
 class Car:
     def __init__(self, car_id, start_pos, destination, city_grid):
+        Car.car_count += 1
+        car_count = 0
         self.car_id = car_id
         self.position = (start_pos[1], start_pos[0]) #x and y coordinate of source
         self.destination = destination #x and y coordinate of destination
@@ -14,11 +16,11 @@ class Car:
         self.reached = False
         self.time_spent = 0
         self.move_probability = .90
+        self.path_index = 0
 
         #Calls the cell class in order to call cell function
-        start_cell = self.grid[self.position[1]][self.position[0]]
-        # c = Cell(self.position[0],self.position[1],)
-        self.speed = start_cell.getCellType() / 2
+        start_cell = self.grid[self.position[1]][self.position[0]].cell_type
+        self.speed = start_cell / 2
 
         rows, cols = len(city_grid), len(city_grid[0])
         self.parent_i = np.full((rows, cols), -1, dtype=int)
@@ -39,17 +41,17 @@ class Car:
     def is_within_grid(self, row, col):
         return (0 <= row < len(self.grid)) and (0 <= col < len(self.grid[0])) and getattr(self.grid[row][col], 'is_road', False)
 
-    def is_destination(self, row, col, destination):
+    def is_destination(self, row, col):
         return row == self.destination[0] and col == self.destination[1]
         
     #heuristic is calculated using euclidean distance to destination
-    def calculate_heuristic_value(self, row, col, destination):
+    def calculate_heuristic_value(self, row, col):
         return ((row - self.destination[0]) ** 2 + (col - self.destination[1]) ** 2) ** 0.5
         
     #trace_path: start from destination coordinates and backtrack until you reach the source coordinates.
     #trace the parent_i and parent_j until it reaches the desination row and column, if not source, 
     #add it to the path to keep track.
-    def trace_path(self, cell_details, destination):
+    def trace_path(self):
         print("The Path: ")
         path = []
         row, col = self.destination[0], self.destination[1]
@@ -75,18 +77,16 @@ class Car:
     #Cell types are going to be in cell class
     def a_star_search(self):
         ROW, COL = len(self.grid), len(self.grid[0])
-        source = self.position
-        destination = self.destination
- 
         # first checks whether destination or source coordinates are within the grid and valid
+        '''
         if not self.is_within_grid(source[0], source[1]) or not self.is_within_grid(destination[0], destination[1]):
             print("Car.py: a_star_search: source or destination coordinates are invalid")
             return []
 
-        if self.is_destination(source[0], source[1]): #input here):
+        if self.is_destination(source[0], source[1]):
             print("Car.py: a_star_search: already at destination")
-            return self.position
-            
+            return [self.position]
+        '''
         # a* algorithm calculation --> f = g + h
         self.g[:, :] = np.inf
         self.h[:, :] = np.inf
@@ -94,7 +94,7 @@ class Car:
         self.parent_i[:, :] = -1
         self.parent_j[:, :] = -1
 
-        i, j = source
+        i, j = self.position
         self.g[i, j] = 0
         self.h[i, j] = self.calculate_heuristic_value(i, j)
         self.f[i, j] = self.g[i, j] + self.h[i, j]
@@ -133,37 +133,42 @@ class Car:
         print(f"Car {self.car_id}: Destination not reachable")
         return []
 
-def update(self, traffic_light, occupied_cell, time_step):
-    if self.reached:
-        return
-    if not self.path:
-        self.compute()
-    current_y, current_x = self.position
-    for step in range(self.speed):
-        next_index = time_step + step
-        if next_index >= len(self.path):
-            break
+    def update(self):
+        if self.reached:
+            return
+        if not self.path:
+            self.compute_path()
 
-        next_pos = self.path[next_index]
-        y, x = next_pos
+        current_y, current_x = self.position
+        current_cell = self.grid[current_y][current_x]
 
-        if not self.is_within_grid(y, x):
-            break
-        next_cell = self.grid[y][x]
-        
-        if random.random() > self.move_probability:
-            break  
+        for _ in range(int(self.speed)):
+            if self.path_index >= len(self.path):
+                break
 
-        if next_cell.getCellType == 3 and not next_cell.getOnOrOff(): #is an intersection and red light is False
-            break
+            y, x = self.path[self.path_index]
 
-        if (y, x) in occupied_cell:
-            break
+            if not self.is_within_grid(y, x):
+                break
+            next_cell = self.grid[y][x]
 
-        self.position = next_pos
-        occupied_cell.add(self.position)
+            if random.random() > self.move_probability:
+                break
 
-    self.time_spent += 1
-    if self.position == self.destination:
-        self.reached = True
+            if next_cell.getCellType() == 3 and not next_cell.getOnOrOff():
+                break
+
+            if next_cell.isOccupied():
+                break
+
+            current_cell.leaving()
+            self.position = (y,x)
+            next_cell.car_enters()
+
+            self.path_index += 1
+            current_cell = next_cell
+
+        self.time_spent += 1
+        if self.position == self.destination:
+            self.reached = True
 
