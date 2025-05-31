@@ -6,8 +6,6 @@ from cell import Cell
 
 class Car:
     def __init__(self, car_id, start_pos, destination, city_grid):
-        Car.car_count += 1
-        car_count = 0
         self.car_id = car_id
         self.position = (start_pos[1], start_pos[0]) #x and y coordinate of source
         self.destination = destination #x and y coordinate of destination
