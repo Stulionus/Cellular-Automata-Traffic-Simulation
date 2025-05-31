@@ -70,7 +70,8 @@ class Grid:
 
         if num_cars > 0 and len(local_road_coords) >= 2:
             for cid in range(num_cars):
-                start = local_road_coords[np.random.choice(len(local_road_coords))]
+                y,x = local_road_coords[np.random.choice(len(local_road_coords))]
+                start = (x,y)
                 dest = local_road_coords[np.random.choice(len(local_road_coords))]
                 while dest == start:
                     dest = local_road_coords[np.random.choice(len(local_road_coords))]

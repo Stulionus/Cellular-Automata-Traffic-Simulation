@@ -6,10 +6,10 @@ from cell import Cell
 
 class Car:
     def __init__(self, car_id, start_pos, destination, city_grid):
-        Car.car_count += 1
-        car_count = 0
+        # Car.car_count += 1
+        # car_count = 0
         self.car_id = car_id
-        self.position = (start_pos[1], start_pos[0]) #x and y coordinate of source
+        self.position = (start_pos[1], start_pos[0]) #x and [y coordinate of source
         self.destination = destination #x and y coordinate of destination
         self.grid = city_grid
         self.path = []
@@ -19,7 +19,7 @@ class Car:
         self.path_index = 0
 
         #Calls the cell class in order to call cell function
-        start_cell = self.grid[self.position[1]][self.position[0]].cell_type
+        start_cell = self.grid[self.position[0]][self.position[1]].cell_type
         self.speed = start_cell / 2
 
         rows, cols = len(city_grid), len(city_grid[0])
@@ -130,7 +130,7 @@ class Car:
                             self.parent_j[ni, nj] = j
                             heapq.heappush(open_list, (f_new, ni, nj))
 
-        print(f"Car {self.car_id}: Destination not reachable")
+        # print(f"Car {self.car_id}: Destination not reachable")
         return []
 
     def update(self):
