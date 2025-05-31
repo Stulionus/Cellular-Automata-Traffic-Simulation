@@ -82,7 +82,7 @@ class Car:
             print("Car.py: a_star_search: source or destination coordinates are invalid")
             return []
 
-        if self.is_destination(source[0], source[1]):
+        if self.is_destination(source[0], source[1], destination):
             print("Car.py: a_star_search: already at destination")
             return [self.position]
         
