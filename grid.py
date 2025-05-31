@@ -43,22 +43,45 @@ class Grid:
         self.city.generateRoads()
 
         self.roadsToGrid()
-        """
-        for row in self.cells:
-            for cell in row:
-                if cell and cell.cell_type == 2:
-                    if np.random.rand() < cars_prob:
-                        cid = len(self.cars)
-                        start = (cell.x, cell.y)
-                        if len(local_coords) > 0:
-                            y, x = local_coords[np.random.choice(len(local_coords))]
-                            dest = (x, y)
-                        else:
-                            dest = start
 
-                        c = Car(cid, start, dest, self.cells)
-                        self.cars.append(c)
-            """
+        # for row in self.cells:
+        #     for cell in row:
+        #         if cell and cell.cell_type == 2:
+        #             if np.random.rand() < cars_prob:
+        #                 cid = len(self.cars)
+        #                 start = (cell.x, cell.y)
+        #                 if len(local_coords) > 0:
+        #                     y, x = local_coords[np.random.choice(len(local_coords))]
+        #                     dest = (x, y)
+        #                 else:
+        #                     dest = start
+
+                        
+        #                 c = Car(cid, start, dest, self.cells)
+        #                 self.cells[start[1]][start[0]].car_enters()
+        #                 self.cars.append(c)
+        
+        num_cars = 1
+
+        # Only select cells where the *actual cell_type* is 2 (local road),
+        # excluding intersections that might have originated from grid value 2.
+        local_road_coords = [(cell.y, cell.x) for row in self.cells for cell in row
+                            if cell and cell.getCellType() == 2]
+
+        if num_cars > 0 and len(local_road_coords) >= 2:
+            for cid in range(num_cars):
+                start = local_road_coords[np.random.choice(len(local_road_coords))]
+                dest = local_road_coords[np.random.choice(len(local_road_coords))]
+                while dest == start:
+                    dest = local_road_coords[np.random.choice(len(local_road_coords))]
+
+                c = Car(cid, start, dest, self.cells)
+                self.cells[start[1]][start[0]].car_enters()
+                self.cars.append(c)
+
+
+
+
 
     def roadsToGrid(self):
         for y in range(self.height):
@@ -68,6 +91,7 @@ class Grid:
                 if value == -1:
                     continue  
 
+                
                 if self.city.intersections[y, x]:
                     cell_type = 3
                 elif value in(2,4,6):
@@ -86,24 +110,25 @@ class Grid:
                 else:
                     c.OnOrOff = False
 
+                c.occupied_by_car= False
+                c.occupied = False
+
                 self.cells[y][x] = c
 
-    def add_Random_events(self, event_chance=0.1):
-        for row in self.cells:
-            for c in row:
-                if c and c.cell_type == 2 and np.random.rand() < event_chance:
-                    c.cell_type = -1
-                    self.city.grid[c.y, c.x] = -1
 
-    def update(self, switch=False):
+    def add_Random_events(self, event_chance = 0.1):
+        for c in self.cells:
+            if c.cell_type == 2 and np.random.rand() <  event_chance:
+                c.cell_type = -1
+                self.city.grid[c.y, c.x] = -1
+
+    def update(self, switch = False):
         self.switch_traffic_light()
         """
-        for row in self.cars:
-            for c in row:
-                if c and c.cell_type == 2:
-                    c.update()  
-                    """
-
+        for c in self.cars:
+            if c.cell_type == 2:
+                c.update()
+        """
 
     def switch_traffic_light(self):
         mask = np.ma.mask_or(self.city.light_A, self.city.light_B)
@@ -136,7 +161,51 @@ class Grid:
         plt.title("Grid View: Road Classes")
         plt.axis('off')
         plt.show()
-        
+
+    def plot_cars(self):
+        img = np.ones((self.height, self.width, 3), dtype=np.uint8) * 255
+
+        # Base road color
+        for y in range(self.height):
+            for x in range(self.width):
+                cell = self.cells[y][x]
+                if cell:
+                    if cell.cell_type == 2:
+                        img[y, x] = [200, 200, 200]
+                    elif cell.cell_type == 4:
+                        img[y, x] = [100, 100, 100]
+                    elif cell.cell_type == 6:
+                        img[y, x] = [0, 0, 0]
+                    elif cell.cell_type == 3:
+                        if cell.getOnOrOff():
+                            img[y, x] = [0, 255, 0]
+                        else:
+                            img[y, x] = [255, 0, 0]
+
+        # Plot cars and paths
+        for car in self.cars:
+            # Compute path if it doesn't exist
+            if not car.path:
+                car.compute_path()
+
+            # Draw path (in light blue)
+            for (y, x) in car.path:
+                img[y, x] = [173, 216, 230]  # light blue
+
+            # Draw destination in purple
+            dy, dx = car.destination
+            img[dy, dx] = [128, 0, 128]
+
+            # Draw current position in orange
+            py, px = car.position
+            img[py, px] = [255, 165, 0]
+
+        plt.figure(figsize=(10, 10))
+        plt.imshow(img, origin='upper')
+        plt.title("Grid with Cars and Paths")
+        plt.axis('off')
+        plt.show()
+
     def get_image(self):
         img = np.ones((self.height, self.width, 3), dtype=np.uint8) * 255
 
