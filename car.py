@@ -16,7 +16,8 @@ class Car:
         self.move_probability = .90
 
         #Calls the cell class in order to call cell function
-        start_cell = self.grid[self.position[0]][self.position[1]]
+        start_cell = self.grid[self.position[1]][self.position[0]]
+        # c = Cell(self.position[0],self.position[1],)
         self.speed = start_cell.getCellType() / 2
 
         rows, cols = len(city_grid), len(city_grid[0])
@@ -76,16 +77,16 @@ class Car:
         ROW, COL = len(self.grid), len(self.grid[0])
         source = self.position
         destination = self.destination
-
+ 
         # first checks whether destination or source coordinates are within the grid and valid
         if not self.is_within_grid(source[0], source[1]) or not self.is_within_grid(destination[0], destination[1]):
             print("Car.py: a_star_search: source or destination coordinates are invalid")
             return []
 
-        if self.is_destination(source[0], source[1], #input here):
+        if self.is_destination(source[0], source[1]): #input here):
             print("Car.py: a_star_search: already at destination")
-            return [self.position]
-        
+            return self.position
+            
         # a* algorithm calculation --> f = g + h
         self.g[:, :] = np.inf
         self.h[:, :] = np.inf
