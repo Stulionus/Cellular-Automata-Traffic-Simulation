@@ -1,7 +1,7 @@
 class Cell:
-    def __init__(self, x, y, cell_type, intersections):
-        self.x = x
+    def __init__(self, y, x, cell_type, intersections):
         self.y = y
+        self.x = x
 
         # Determine if the cell is an intersection
         if 0 <= y < intersections.shape[0] and 0 <= x < intersections.shape[1] and intersections[y, x]:
@@ -13,7 +13,7 @@ class Cell:
         self.OnOrOff = False  # Traffic light state: True = green, False = red
 
         # Occupancy tracking
-        self.occupied = False  # True if a car is in the cell or it's a red-light intersection
+        self.occupied = False
         self.occupied_by_car = False
 
         # Car time tracking
@@ -34,33 +34,30 @@ class Cell:
         """Set traffic light state: True = green, False = red."""
         if self.cell_type == 3:
             self.OnOrOff = switch
-            # Update occupancy depending on light state
-            if switch:  # Green light
+            if switch:
                 if not self.occupied_by_car:
                     self.occupied = False
-            else:  # Red light
+            else:
                 self.occupied = True
 
     def switch_traffic_light(self):
         """Toggle the traffic light state and update occupancy accordingly."""
         self.OnOrOff = not self.OnOrOff
         if self.cell_type == 3:
-            if self.OnOrOff:  # Green
+            if self.OnOrOff:
                 if not self.occupied_by_car:
                     self.occupied = False
-            else:  # Red
+            else:
                 self.occupied = True
 
     # --- Car movement & occupancy ---
     def car_enters(self):
-        """Call when a car enters the cell."""
         self.occupied = True
         self.occupied_by_car = True
 
     def leaving(self):
-        """Call when a car leaves the cell. Clears occupancy only if light is green."""
         self.occupied_by_car = False
-        if self.cell_type != 3 or self.OnOrOff:  # Either not an intersection or light is green
+        if self.cell_type != 3 or self.OnOrOff:
             self.occupied = False
 
     # --- Car movement logic ---
@@ -83,66 +80,62 @@ class Cell:
 
     # --- Move calculation ---
     def addPossibleMoves(self, city, intersections, horizontal, vertical):
-        x, y = self.x, self.y
+        y, x = self.y, self.x
         grid = city.grid
 
-        def in_bounds(x_, y_):
-            return 0 <= x_ < grid.shape[1] and 0 <= y_ < grid.shape[0]
+        def in_bounds(y_, x_):
+            return 0 <= y_ < grid.shape[0] and 0 <= x_ < grid.shape[1]
 
-        def is_road(x_, y_):
-            return in_bounds(x_, y_) and (horizontal[y_, x_] or vertical[y_, x_])
+        def is_road(y_, x_):
+            return in_bounds(y_, x_) and (horizontal[y_, x_] or vertical[y_, x_])
 
-        def is_intersection(x_, y_):
-            return in_bounds(x_, y_) and intersections[y_, x_]
+        def is_intersection(y_, x_):
+            return in_bounds(y_, x_) and intersections[y_, x_]
 
-        def is_land(x_, y_):
-            return in_bounds(x_, y_) and not (horizontal[y_, x_] or vertical[y_, x_]) and not intersections[y_, x_]
+        def is_land(y_, x_):
+            return in_bounds(y_, x_) and not (horizontal[y_, x_] or vertical[y_, x_]) and not intersections[y_, x_]
 
-        # Directions
+        # Directions: dy, dx
         directions = {
-            'NW': (-1, -1), 'N': (0, -1), 'NE': (1, -1),
-            'W': (-1, 0),               'E': (1, 0),
-            'SW': (-1, 1),  'S': (0, 1),  'SE': (1, 1)
+            'NW': (-1, -1), 'N': (-1, 0), 'NE': (-1, 1),
+            'W':  (0, -1),               'E':  (0, 1),
+            'SW': (1, -1),  'S': (1, 0),  'SE': (1, 1)
         }
 
-        # Classify all 8 neighbors
         status = {}
-        for d, (dx, dy) in directions.items():
-            xx, yy = x + dx, y + dy
-            if not in_bounds(xx, yy):
-                status[d] = 'X'  # Out of bounds
-            elif is_intersection(xx, yy):
+        for d, (dy, dx) in directions.items():
+            yy, xx = y + dy, x + dx
+            if not in_bounds(yy, xx):
+                status[d] = 'X'
+            elif is_intersection(yy, xx):
                 status[d] = 'I'
-            elif is_road(xx, yy):
+            elif is_road(yy, xx):
                 status[d] = 'R'
             else:
                 status[d] = 'L'
 
         if self.cell_type == 3:
-            # Simplified logic — example patterns
             if status['N'] in 'RI' and status['S'] in 'RI':
-                self.addMove((0, -1))  # North
-                self.addMove((0, 1))   # South
+                self.addMove((-1, 0))  # North
+                self.addMove((1, 0))   # South
             if status['E'] in 'RI' and status['W'] in 'RI':
-                self.addMove((1, 0))  # East
-                self.addMove((-1, 0))  # West
-
-            # T or corner logic
+                self.addMove((0, 1))   # East
+                self.addMove((0, -1))  # West
             if status['N'] in 'RI' and status['E'] in 'RI':
-                self.addMove((0, -1))
-                self.addMove((1, 0))
-            if status['S'] in 'RI' and status['W'] in 'RI':
-                self.addMove((0, 1))
                 self.addMove((-1, 0))
+                self.addMove((0, 1))
+            if status['S'] in 'RI' and status['W'] in 'RI':
+                self.addMove((1, 0))
+                self.addMove((0, -1))
 
         elif self.cell_type == 1 or self.cell_type == 2:
             if self.cell_type == 1:  # Horizontal road
                 if status['E'] in 'RI':
-                    self.addMove((1, 0))
+                    self.addMove((0, 1))
                 if status['W'] in 'RI':
-                    self.addMove((-1, 0))
+                    self.addMove((0, -1))
             if self.cell_type == 2:  # Vertical road
                 if status['N'] in 'RI':
-                    self.addMove((0, -1))
+                    self.addMove((-1, 0))
                 if status['S'] in 'RI':
-                    self.addMove((0, 1))
+                    self.addMove((1, 0))
