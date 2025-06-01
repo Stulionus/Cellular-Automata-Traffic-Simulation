@@ -99,7 +99,7 @@ class Grid:
                 else:
                     cell_type = -1
 
-                c = Cell(x, y, cell_type,self.city.intersections)
+                c = Cell(y, x, cell_type,self.city.intersections)
                 c.addPossibleMoves(self.city,
                                    self.city.intersections,
                                    self.city.horizontal_roads,
