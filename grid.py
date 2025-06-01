@@ -41,6 +41,25 @@ class Grid:
         self.city.generateRoads()
         self.roadsToGrid()
 
+        #-------------------------------------------------------------------------------
+        # Keep this here please this will be the final version
+        # the one with num_cars is only being used for testing
+        #-------------------------------------------------------------------------------
+        # for row in self.cells:
+        #     for cell in row:Add commentMore actions
+        #         if cell and cell.cell_type == 2:
+        #             if np.random.rand() < cars_prob:
+        #                 cid = len(self.cars)
+        #                 start = (cell.x, cell.y)
+        #                 if len(local_coords) > 0:
+        #                     y, x = local_coords[np.random.choice(len(local_coords))]
+        #                     dest = (x, y)
+        #                 else:
+        #                     dest = start
+        #                 c = Car(cid, start, dest, self.cells)
+        #                 self.cells[start[1]][start[0]].car_enters()
+        #                 self.cars.append(c)
+
         num_cars = 1
 
         local_road_coords = [(cell.y, cell.x) for row in self.cells for cell in row
@@ -48,8 +67,7 @@ class Grid:
 
         if num_cars > 0 and len(local_road_coords) >= 2:
             for cid in range(num_cars):
-                y,x = local_road_coords[np.random.choice(len(local_road_coords))]
-                start = (x,y)
+                start = local_road_coords[np.random.choice(len(local_road_coords))]
                 dest = local_road_coords[np.random.choice(len(local_road_coords))]
                 while dest == start:
                     dest = local_road_coords[np.random.choice(len(local_road_coords))]
@@ -61,7 +79,10 @@ class Grid:
                 else:
                     print(f"Warning: Start cell at {start} is None.")
 
+                c.compute_path() 
+                c.trace_path()
                 self.cars.append(c)
+
 
     def roadsToGrid(self):
         for y in range(self.height):
@@ -103,6 +124,7 @@ class Grid:
                     self.city.grid[c.y, c.x] = -1
 
     def update(self, switch=False):
+        
         self.switch_traffic_light()
         # for c in self.cars:
         #     if c.cell_type == 2:
@@ -188,3 +210,22 @@ class Grid:
                     elif cell.cell_type == 3:
                         img[y, x] = [0, 255, 0] if cell.getOnOrOff() else [255, 0, 0]
         return img
+
+    def plot_occupied(self):
+        img = np.ones((self.height, self.width, 3), dtype=np.uint8) * 255
+
+        for y in range(self.height):
+            for x in range(self.width):
+                cell = self.cells[y][x]
+                if cell:
+                    if cell.cell_type in (2, 3, 4, 6):
+                        if cell.occupied:
+                            img[y, x] = [255, 0, 0]
+                        else:
+                            img[y, x] = [169, 169, 169]
+
+        plt.figure(figsize=(10, 10))
+        plt.imshow(img, origin='upper')
+        plt.title("Occupied Cells (Red)")
+        plt.axis('off')
+        plt.show()

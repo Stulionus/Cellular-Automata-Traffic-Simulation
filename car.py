@@ -9,8 +9,8 @@ class Car:
         # Car.car_count += 1
         # car_count = 0
         self.car_id = car_id
-        self.position = (start_pos[1], start_pos[0]) #x and [y coordinate of source
-        self.destination = destination #x and y coordinate of destination
+        self.position = (start_pos[0], start_pos[1]) #x and [y coordinate of source
+        self.destination = (destination[0], destination[1]) #x and y coordinate of destination
         self.grid = city_grid
         self.path = []
         self.reached = False
@@ -67,7 +67,9 @@ class Car:
         for p in path:
             print(p, end=" ")
         print()
+        self.path = path
         return path
+
 
     #compute_path: when called, will call a star search function that includes all helper functions
     # in order to compute the path
@@ -131,7 +133,8 @@ class Car:
                             heapq.heappush(open_list, (f_new, ni, nj))
 
         # print(f"Car {self.car_id}: Destination not reachable")
-        return []
+        return [self.position] if not self.reached else []
+
 
     def update(self):
         if self.reached:
