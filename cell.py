@@ -1,10 +1,10 @@
 class Cell:
-    def __init__(self, x, y, cell_type, intersections):
+    def __init__(self, y, x, cell_type, intersections):
         self.x = x
         self.y = y
 
         # Determine if the cell is an intersection
-        if 0 <= y < intersections.shape[0] and 0 <= x < intersections.shape[1] and intersections[x, y]:
+        if 0 <= y < intersections.shape[0] and 0 <= x < intersections.shape[1] and intersections[y, x]:
             self.cell_type = 3
         else:
             self.cell_type = cell_type
