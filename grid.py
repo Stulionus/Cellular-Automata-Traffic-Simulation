@@ -62,7 +62,7 @@ class Grid:
 
         num_cars = 1
 
-        local_road_coords = [(cell.y, cell.x) for row in self.cells for cell in row
+        local_road_coords = [(cell.x, cell.y) for row in self.cells for cell in row
                      if cell is not None and isinstance(cell, Cell) and cell.getCellType() == 2]
 
         if num_cars > 0 and len(local_road_coords) >= 2:
@@ -80,7 +80,7 @@ class Grid:
                     print(f"Warning: Start cell at {start} is None.")
 
                 c.compute_path() 
-                c.trace_path()
+                #c.trace_path()
                 self.cars.append(c)
 
 
@@ -99,12 +99,13 @@ class Grid:
                 else:
                     cell_type = -1
 
-                c = Cell(y, x, cell_type,self.city.intersections)
-                c.addPossibleMoves(self.city,
-                                   self.city.intersections,
-                                   self.city.horizontal_roads,
-                                   self.city.vertical_roads)
-
+                c = Cell(y, x, cell_type, self.city.intersections)
+                c.addPossibleMoves(
+                    self.city,
+                    self.city.intersections,
+                    self.city.horizontal_roads,
+                    self.city.vertical_roads
+                )
                 if self.city.light_A[y,x]:
                     c.OnOrOff = True
                 else:
