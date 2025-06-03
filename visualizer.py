@@ -28,6 +28,7 @@ class Visualizer:
         return img
 
     def render(self, show_cars=True, show_paths=True, show_occupied=False):
+        self.grid.cars = [car for car in self.grid.cars if not car.reached]
 
         base = self._build_base_image()
 
@@ -37,12 +38,12 @@ class Visualizer:
                     if not car.path:
                         car.compute_path()
                     for (py, px) in car.path:
-                        base[py, px] = [173, 216, 230] 
+                        base[py, px] = [173, 216, 230]
                 if show_cars:
                     cy, cx = car.position
                     if 0 <= cy < self.grid.height and 0 <= cx < self.grid.width:
-                        base[cy, cx] = [255, 165, 0] 
-                    dy, dx = car.destination
+                        base[cy, cx] = [255, 165, 0]
+                    # dy, dx = car.destination
                     # if 0 <= dy < self.grid.height and 0 <= dx < self.grid.width:
                     #     base[dy, dx] = [128, 0, 128]
 
@@ -58,7 +59,7 @@ class Visualizer:
         self.ax.set_title("Traffic Grid")
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
-        plt.pause(0.001)
+        plt.pause(0.0001)
 
     def render_traffic_heatmap(self):
         rows, cols = self.grid.height, self.grid.width

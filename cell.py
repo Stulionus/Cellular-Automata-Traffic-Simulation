@@ -46,7 +46,7 @@ class Cell:
         self.OnOrOff = not self.OnOrOff
         if self.cell_type == 3:
             if self.OnOrOff:  # Green
-                if not self.occupied_by_car:
+                # if not self.occupied_by_car:
                     self.occupied = False
             else:  # Red
                 self.occupied = True

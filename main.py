@@ -31,10 +31,13 @@ def main():
 
     # 2) Measure how long the simulation+plotting loop takes
     t2 = time.perf_counter()
-    model.simulate()
+    model.simulate_w_plot()
     t3 = time.perf_counter()
     print(f"Simulation (with plotting) took {t3 - t2:.4f} seconds")
 
+    # model.plot_traffic_heatmap()
+
+    # model.simulate_w_plot()
 
 if __name__ == "__main__":
     main()

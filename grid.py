@@ -232,3 +232,41 @@ class Grid:
         plt.title("Occupied Cells (Red)")
         plt.axis('off')
         plt.show()
+
+    def reset_cars(self):
+        """
+        Clear the current list of cars, then recreate and place the same number
+        of cars on random road‐cells using the exact logic from __init__().
+        """
+        # 1) Empty out the existing cars list
+        self.cars = []
+
+        # 2) Re‐use the same num_cars and local_road_coords logic from __init__
+        num_cars = 20
+        local_road_coords = [
+            (cell.x, cell.y)
+            for row in self.cells
+            for cell in row
+            if cell is not None and isinstance(cell, Cell) and cell.getCellType() == 2
+        ]
+
+        # 3) If there are at least two road‐cells, randomly create each Car
+        if num_cars > 0 and len(local_road_coords) >= 2:
+            for cid in range(num_cars):
+                start = local_road_coords[np.random.choice(len(local_road_coords))]
+                dest = local_road_coords[np.random.choice(len(local_road_coords))]
+                while dest == start:
+                    dest = local_road_coords[np.random.choice(len(local_road_coords))]
+
+                c = Car(cid, start, dest, self.cells)
+
+                # Place the car in its start‐cell
+                start_cell = self.cells[start[1]][start[0]]
+                if start_cell is not None:
+                    start_cell.car_enters()
+                else:
+                    print(f"Warning: Start cell at {start} is None.")
+
+                # Precompute its path
+                c.compute_path()
+                self.cars.append(c)

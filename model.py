@@ -39,11 +39,17 @@ class Model:
         )
 
     def simulate(self):
-        for i in range(self.time):
-            self.grid.update(i % self.traffic_light_time == 0)
+            if len(self.grid.cars) > 0:
+                self.grid.reset_cars()
+
+            for i in range(self.time):
+                toggle = (i % self.traffic_light_time == 0)
+                self.grid.update(toggle)
 
     def simulate_w_plot(self):
-            self.make_grid()
+            if len(self.grid.cars) > 0:
+                self.grid.reset_cars()
+
             viz = Visualizer(self.grid)
 
             for i in range(self.time):
@@ -57,4 +63,9 @@ class Model:
             plt.ioff()
             plt.show()
 
+    def plot_traffic_heatmap(self):
+        viz = Visualizer(self.grid)
+        viz.render_traffic_heatmap()
+        plt.ioff()
+        plt.show()
 

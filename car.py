@@ -215,23 +215,21 @@ class Car:
 
         return [self.position] if not self.reached else []
 
-        def update(self):
-        print("Current Path Length: ", len(self.path), "Current Index: ", self.path_index)
-        print("Current Speed: " , self.speed)
-
+    def update(self):
         current_y, current_x = self.position
         current_cell = self.grid[current_y][current_x]
-        
+
         if self.reached:
             current_cell.leaving()
             return
+
         if not self.path:
             self.compute_path()
-            print(len(self.path))
+
         if self.path_index >= len(self.path):
             current_cell.leaving()
             return
-        
+
         for _ in range(int(self.speed)):
             if self.path_index >= len(self.path):
                 current_cell.leaving()
@@ -239,28 +237,31 @@ class Car:
 
             y, x = self.path[self.path_index]
             if not self.is_within_grid(y, x):
-                print(f"Car {self.car_id} blocked: cell {(y, x)} out of bounds.")
                 break
 
             next_cell = self.grid[y][x]
 
-            # Enforce right-side driving at movement time as well
+            # 1) Right‐side driving check
             if not self.is_on_correct_lane(current_y, current_x, y, x):
-                print(f"Car {self.car_id} blocked: wrong lane from {(current_y, current_x)} → {(y, x)}.")
                 break
 
+            # 2) Random hesitation
             if random.random() > self.move_probability:
-                print(f"Car {self.car_id} hesitated due to move_probability.")
                 break
 
-            if next_cell.getCellType() == 3 and not next_cell.getOnOrOff():
-                print(f"Car {self.car_id} blocked at red light at {(y, x)}.")
+            # 3) Red‐light check: only when approaching an intersection
+            if next_cell.getCellType() == 3:          # next is an intersection
+                if current_cell.getCellType() != 3:    # we are NOT already on an intersection
+                    if not next_cell.getOnOrOff():     # next light is RED
+                        # print(f"Car {self.car_id} blocked at red light at {(y, x)}.")
+                        break
+
+            # 4) Occupancy‐by‐another‐car check: only block if next_cell.occupied_by_car is True
+            if next_cell.occupied_by_car:
+                # print(f"Car {self.car_id} blocked: cell {(y, x)} is occupied by another car.")
                 break
 
-            if next_cell.isOccupied():
-                print(f"Car {self.car_id} blocked: cell {(y, x)} is occupied.")
-                break
-
+            # If we reach here, we can move into next_cell
             current_cell.leaving()
             next_cell.car_enters()
 
@@ -272,6 +273,8 @@ class Car:
 
         self.time_spent += 1
 
+        # If we've reached our destination, mark reached and leave the final cell
         if self.position == self.destination:
             self.reached = True
             current_cell.leaving()
+
