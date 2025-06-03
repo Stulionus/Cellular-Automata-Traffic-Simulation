@@ -38,18 +38,15 @@ class Model:
             block_size_range=self.block_size_range
         )
 
-    def simulate(self):
-            if len(self.grid.cars) > 0:
-                self.grid.reset_cars()
+    def reset_cars(self):
+            self.grid.reset_cars()
 
+    def simulate(self):
             for i in range(self.time):
                 toggle = (i % self.traffic_light_time == 0)
                 self.grid.update(toggle)
 
     def simulate_w_plot(self):
-            if len(self.grid.cars) > 0:
-                self.grid.reset_cars()
-
             viz = Visualizer(self.grid)
 
             for i in range(self.time):
