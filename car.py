@@ -215,7 +215,7 @@ class Car:
 
         return [self.position] if not self.reached else []
 
-    def update(self):
+        def update(self):
         print("Current Path Length: ", len(self.path), "Current Index: ", self.path_index)
         print("Current Speed: " , self.speed)
 
@@ -253,15 +253,13 @@ class Car:
                 print(f"Car {self.car_id} hesitated due to move_probability.")
                 break
 
-            if next_cell.isOccupied() and current_cell.getCellType() != 3:
-                print(f"Car {self.car_id} blocked: cell {(y, x)} is occupied.")
+            if next_cell.getCellType() == 3 and not next_cell.getOnOrOff():
+                print(f"Car {self.car_id} blocked at red light at {(y, x)}.")
                 break
 
-            # Only stop for a red light if the car is not already in the intersection
-            #if next_cell.getCellType() == 3 and not next_cell.getOnOrOff():
-             #   if current_cell.getCellType() != 3:
-              #      print(f"Car {self.car_id} blocked at red light at {(y, x)}.")
-               #     break
+            if next_cell.isOccupied():
+                print(f"Car {self.car_id} blocked: cell {(y, x)} is occupied.")
+                break
 
             current_cell.leaving()
             next_cell.car_enters()
