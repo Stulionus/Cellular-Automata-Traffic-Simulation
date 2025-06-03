@@ -228,15 +228,15 @@ class Car:
             current_cell.leaving()
             next_cell.car_enters()
 
-            self.path_index += 1   
-            self.position = self.path[self.path_index]         
-                    
+            self.path_index += 1
+            self.position = (y, x)
 
             current_cell = next_cell
             current_y, current_x = y, x
 
         self.time_spent += 1
+
         if self.position == self.destination:
             self.reached = True
             current_cell.leaving()
-        self.position = self.path[self.path_index]
+
