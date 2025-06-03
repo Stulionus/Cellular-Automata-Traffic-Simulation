@@ -11,6 +11,8 @@ class Model:
                  cars_prob=0.0, 
                  road_remove_probability=0.1,
                  event_chance=0.1,
+                 traffic_light_time= 2,
+                 current_time_step = 0,
                  traffic_light_time=10,
                  move_chance=0.9):
         
