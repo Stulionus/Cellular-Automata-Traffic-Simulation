@@ -43,8 +43,8 @@ class Visualizer:
                     if 0 <= cy < self.grid.height and 0 <= cx < self.grid.width:
                         base[cy, cx] = [255, 165, 0] 
                     dy, dx = car.destination
-                    if 0 <= dy < self.grid.height and 0 <= dx < self.grid.width:
-                        base[dy, dx] = [128, 0, 128]
+                    # if 0 <= dy < self.grid.height and 0 <= dx < self.grid.width:
+                    #     base[dy, dx] = [128, 0, 128]
 
         if show_occupied:
             for y in range(self.grid.height):

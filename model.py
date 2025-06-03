@@ -50,7 +50,7 @@ class Model:
                 toggle = (i % self.traffic_light_time == 0)
                 self.grid.update(toggle)
 
-                viz.render(show_cars=True, show_paths=True, show_occupied=False)
+                viz.render(show_cars=True, show_paths=False, show_occupied=False)
 
                 time.sleep(0.2)
 
