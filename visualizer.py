@@ -59,3 +59,48 @@ class Visualizer:
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
         plt.pause(0.001)
+
+    def render_traffic_heatmap(self):
+        rows, cols = self.grid.height, self.grid.width
+        raw_values = np.full((rows, cols), np.nan)
+
+        for y in range(rows):
+            for x in range(cols):
+                cell = self.grid.cells[y][x]
+                if cell and cell.cell_type in (2, 3, 4, 6):
+                    total_time = sum(cell.time_spent_log)
+                    #print(total_time)
+                    total_cars = cell.total_cars_passed
+                    #print(total_cars)
+                    if total_cars > 0:
+                        raw_values[y, x] = total_time / total_cars
+                    else:
+                        raw_values[y, x] = np.nan
+        heatmap = np.nan_to_num(raw_values, nan=0.0)
+        max_val = np.max(heatmap)
+
+        fig, ax = plt.subplots(figsize = (10,10))
+        cmap = plt.cm.Wistia
+
+        im = ax.imshow (
+            heatmap,
+            cmap = cmap,
+            interpolation = 'nearest',
+            origin='upper',
+            vmin = 0,
+            vmax = max_val
+        )
+
+        cbar = fig.colorbar(im, ax = ax, shrink = 0.5, pad= 0.05)
+        
+        ax.set_title("Traffic Density Heatmap", fontsize=16)
+        ax.set_xlabel("X", fontsize=12)
+        ax.set_ylabel("Y", fontsize=12)
+
+        ax.tick_params(axis='both', which='major', labelsize=10)
+        ax.grid(False)
+        plt.tight_layout()
+        plt.show(block = True)
+
+        
+    
