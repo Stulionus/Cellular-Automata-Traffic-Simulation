@@ -15,7 +15,8 @@ class Car:
         self.time_spent = 0
         self.move_probability = 0.90
         self.path_index = 0
-        self.source = start_pos
+        self.left_turn_in_progress = False
+
 
         start_cell_type = self.grid[self.position[0]][self.position[1]].cell_type
         self.speed = start_cell_type / 2
@@ -56,75 +57,105 @@ class Car:
         return cell is not None and cell.getCellType() in (2, 3, 4, 6)
 
     def is_on_correct_lane(self, i, j, ni, nj):
-        # Allow any move if current or next is an intersection
-        curr_type = self.grid[i][j].getCellType()
-        next_type = self.grid[ni][nj].getCellType()
-        if curr_type == 3 or next_type == 3:
-            return True
+        curr_cell = self.grid[i][j]
+        next_cell = self.grid[ni][nj]
+        curr_type = curr_cell.getCellType()
+        next_type = next_cell.getCellType()
 
-        # Horizontal move
-        if i == ni and j != nj:
-            # Find vertical extent of contiguous road cells at column j
-            i_min = i_max = i
-            # upward
-            k = i - 1
-            while k >= 0 and self.is_road_cell(k, j):
-                i_min = k
-                k -= 1
-            # downward
-            k = i + 1
-            while k < self.ROW and self.is_road_cell(k, j):
-                i_max = k
-                k += 1
+        dx, dy = ni - i, nj - j
 
-            if nj > j:
-                # moving east → use bottom lane (largest row index)
-                return i == i_max
-            else:
-                # moving west → use top lane (smallest row index)
-                return i == i_min
+        # Not at an intersection: enforce right-side lanes
+        if curr_type != 3 and next_type != 3:
+            if i == ni and j != nj:  # horizontal
+                i_min = i_max = i
+                k = i - 1
+                while k >= 0 and self.is_road_cell(k, j):
+                    i_min = k
+                    k -= 1
+                k = i + 1
+                while k < self.ROW and self.is_road_cell(k, j):
+                    i_max = k
+                    k += 1
+                return (nj > j and i == i_max) or (nj < j and i == i_min)
 
-        # Vertical move
-        if j == nj and i != ni:
-            # Find horizontal extent of contiguous road cells at row i
-            j_min = j_max = j
-            # left
-            k = j - 1
-            while k >= 0 and self.is_road_cell(i, k):
-                j_min = k
-                k -= 1
-            # right
-            k = j + 1
-            while k < self.COL and self.is_road_cell(i, k):
-                j_max = k
-                k += 1
+            elif j == nj and i != ni:  # vertical
+                j_min = j_max = j
+                k = j - 1
+                while k >= 0 and self.is_road_cell(i, k):
+                    j_min = k
+                    k -= 1
+                k = j + 1
+                while k < self.COL and self.is_road_cell(i, k):
+                    j_max = k
+                    k += 1
+                return (ni > i and j == j_min) or (ni < i and j == j_max)
 
-            if ni > i:
-                # moving south → use left lane (smallest col index)
-                return j == j_min
-            else:
-                # moving north → use right lane (largest col index)
-                return j == j_max
+            return False
 
-        return False
+        # At intersection: allow straight, right, and restricted left
+        if curr_type == 3:
+            prev_i, prev_j = self.parent_i[i, j], self.parent_j[i, j]
+            if prev_i == -1 or prev_j == -1:
+                return False  # no incoming direction yet
+
+            dir_in = (i - prev_i, j - prev_j)
+            dir_out = (ni - i, nj - j)
+
+            # Define turn options using (dy, dx)
+            straight_dirs = {
+                (-1, 0): (-1, 0),  # from north
+                (1, 0): (1, 0),    # from south
+                (0, -1): (0, -1),  # from west
+                (0, 1): (0, 1),    # from east
+            }
+
+            right_turns = {
+                (-1, 0): (0, 1),   # from north → east
+                (1, 0): (0, -1),   # from south → west
+                (0, -1): (-1, 0),  # from west → north
+                (0, 1): (1, 0),    # from east → south
+            }
+
+            left_turns = {
+                (-1, 0): (0, -1),  # from north → west
+                (1, 0): (0, 1),    # from south → east
+                (0, -1): (1, 0),   # from west → south
+                (0, 1): (-1, 0),   # from east → north
+            }
+
+            # Allow straight and right turns freely
+            if dir_out == straight_dirs.get(dir_in) or dir_out == right_turns.get(dir_in):
+                return True
+
+            # Left turn condition: only if car is in top-right of 2x2 intersection *from its perspective*
+            if dir_out == left_turns.get(dir_in):
+                if dir_in == (-1, 0):  # From north
+                    return (i % 2 == 0 and j % 2 == 1)
+                elif dir_in == (1, 0):  # From south
+                    return (i % 2 == 1 and j % 2 == 0)
+                elif dir_in == (0, -1):  # From west
+                    return (i % 2 == 0 and j % 2 == 0)
+                elif dir_in == (0, 1):  # From east
+                    return (i % 2 == 1 and j % 2 == 1)
+
+            return False
+
+        return True
+
 
     def trace_path(self):
         path = []
         row, col = self.destination
         while not (self.parent_i[row, col] == row and self.parent_j[row, col] == col):
             path.append((int(row), int(col)))
-            path.append((int(row), int(col)))
             row, col = self.parent_i[row, col], self.parent_j[row, col]
         path.append((int(row), int(col))) #change to int to output coordinates correctly
-        path.append((int(row), int(col))) #change to int to output coordinates correctly
         path.reverse()
-        self.path = path[1:]
         self.path = path[1:]
         return path
 
     def compute_path(self):
         self.path = self.a_star_search()
-        self.path = self.path[1:]
         self.path = self.path[1:]
 
     def a_star_search(self):
@@ -185,14 +216,13 @@ class Car:
         return [self.position] if not self.reached else []
 
     def update(self):
-        # print("Current Path Length: ", len(self.path), "Current Index: ", self.path_index)
-        # print("Current Speed: " , self.speed)
+        print("Current Path Length: ", len(self.path), "Current Index: ", self.path_index)
+        print("Current Speed: " , self.speed)
 
         current_y, current_x = self.position
         current_cell = self.grid[current_y][current_x]
         
         if self.reached:
-            current_cell.leaving()
             current_cell.leaving()
             return
         if not self.path:
@@ -202,41 +232,36 @@ class Car:
             current_cell.leaving()
             return
         
-            print(len(self.path))
-        if self.path_index >= len(self.path):
-            current_cell.leaving()
-            return
-        
         for _ in range(int(self.speed)):
             if self.path_index >= len(self.path):
-                current_cell.leaving()
                 current_cell.leaving()
                 break
 
             y, x = self.path[self.path_index]
             if not self.is_within_grid(y, x):
-                #print(f"Car {self.car_id} blocked: cell {(y, x)} out of bounds.")
+                print(f"Car {self.car_id} blocked: cell {(y, x)} out of bounds.")
                 break
-
 
             next_cell = self.grid[y][x]
 
             # Enforce right-side driving at movement time as well
-            #if not self.is_on_correct_lane(current_y, current_x, y, x):
-            #    print(f"Car {self.car_id} blocked: wrong lane from {(current_y, current_x)} → {(y, x)}.")
-            #    break
+            if not self.is_on_correct_lane(current_y, current_x, y, x):
+                print(f"Car {self.car_id} blocked: wrong lane from {(current_y, current_x)} → {(y, x)}.")
+                break
 
             if random.random() > self.move_probability:
-                #print(f"Car {self.car_id} hesitated due to move_probability.")
+                print(f"Car {self.car_id} hesitated due to move_probability.")
                 break
 
-            if next_cell.getCellType() == 3 and not next_cell.getOnOrOff():
-                #print(f"Car {self.car_id} blocked at red light at {(y, x)}.")
+            if next_cell.isOccupied() and current_cell.getCellType() != 3:
+                print(f"Car {self.car_id} blocked: cell {(y, x)} is occupied.")
                 break
 
-            if next_cell.isOccupied():
-                #print(f"Car {self.car_id} blocked: cell {(y, x)} is occupied.")
-                break
+            # Only stop for a red light if the car is not already in the intersection
+            #if next_cell.getCellType() == 3 and not next_cell.getOnOrOff():
+             #   if current_cell.getCellType() != 3:
+              #      print(f"Car {self.car_id} blocked at red light at {(y, x)}.")
+               #     break
 
             current_cell.leaving()
             next_cell.car_enters()
@@ -252,4 +277,3 @@ class Car:
         if self.position == self.destination:
             self.reached = True
             current_cell.leaving()
-
