@@ -1,3 +1,4 @@
+import time
 class Cell:
     def __init__(self, x, y, cell_type, intersections):
         self.x = x
@@ -51,17 +52,19 @@ class Cell:
             else:  # Red
                 self.occupied = True
 
-    # --- Car movement & occupancy ---
+    # In Cell class, change car_enters and leaving to record timestamps
     def car_enters(self):
-        """Call when a car enters the cell."""
-        #print("car enters at", self.x, self.y)
         self.occupied = True
         self.occupied_by_car = True
+        self.total_cars_passed += 1
+        self.entry_time = time.perf_counter()  # record when the car arrived
 
     def leaving(self):
-        """Call when a car leaves the cell. Clears occupancy only if light is green."""
+        # compute how long that car was in this cell:
+        duration = time.perf_counter() - self.entry_time
+        self.addTimeSpent(duration)
         self.occupied_by_car = False
-        if self.cell_type != 3 or self.OnOrOff:  # Either not an intersection or light is green
+        if self.cell_type != 3 or self.OnOrOff:
             self.occupied = False
 
     # --- Car movement logic ---
@@ -74,7 +77,6 @@ class Cell:
     # --- Car time tracking ---
     def addTimeSpent(self, time_spent):
         self.time_spent_log.append(time_spent)
-        self.total_cars_passed += 1
 
     def getTimeLog(self):
         return self.time_spent_log

@@ -69,14 +69,12 @@ class Visualizer:
             for x in range(cols):
                 cell = self.grid.cells[y][x]
                 if cell and cell.cell_type in (2, 3, 4, 6):
-                    total_time = sum(cell.time_spent_log)
-                    #print(total_time)
-                    total_cars = cell.total_cars_passed
-                    #print(total_cars)
+                    total_time = sum(cell.time_spent_log)         # now > 0
+                    total_cars = cell.total_cars_passed 
                     if total_cars > 0:
-                        raw_values[y, x] = total_time / total_cars
+                        raw_values[y, x] = total_time / (total_cars +1)
                     else:
-                        raw_values[y, x] = np.nan
+                        raw_values[y, x] = total_time /( total_cars +1)
         heatmap = np.nan_to_num(raw_values, nan=0.0)
         max_val = np.max(heatmap)
 

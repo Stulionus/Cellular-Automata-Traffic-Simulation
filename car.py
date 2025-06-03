@@ -155,7 +155,7 @@ class Car:
         return path
 
     def compute_path(self):
-        t2 = time.perf_counter()
+        # t2 = time.perf_counter()
         full_path = self.a_star_search()
         
         if len(full_path) <= 1:
@@ -163,8 +163,8 @@ class Car:
             self.path = []
         else:
             self.path = full_path[1:]
-            t3 = time.perf_counter()
-            print(f"Car {self.car_id} took {t3 - t2:.4f} seconds to compute path")
+            # t3 = time.perf_counter()
+            # print(f"Car {self.car_id} took {t3 - t2:.4f} seconds to compute path")
         
 
 
