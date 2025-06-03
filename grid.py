@@ -62,7 +62,7 @@ class Grid:
         #                 self.cells[start[1]][start[0]].car_enters()
         #                 self.cars.append(c)
 
-        num_cars = 50
+        num_cars = 20
 
         local_road_coords = [(cell.x, cell.y) for row in self.cells for cell in row
                      if cell is not None and isinstance(cell, Cell) and cell.getCellType() == 2]

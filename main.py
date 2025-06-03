@@ -3,8 +3,8 @@ from model import Model
 
 def main():
     # Configuration
-    width = 200
-    height = 200
+    width = 100
+    height = 100
     block_density = (10, 30)
     base_road_width = 2
     wide_road_width = 4
@@ -12,7 +12,7 @@ def main():
     road_remove_probability = 0.2
 
     # Rename this local variable so it doesn’t shadow the time module:
-    time_steps = 1000
+    time_steps = 200
 
     # 1) Measure how long it takes to construct (make) the grid
     t0 = time.perf_counter()
