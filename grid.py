@@ -12,13 +12,15 @@ class Grid:
                  height, 
                  road_remove_probability=0.1, 
                  event_chance=0.1, 
-                 cars_prob=0.01):
+                 cars_prob=0.01,
+                 block_size_range=(10,30)
+                 ):
 
         self.cells = [[None for _ in range(width)] for _ in range(height)]
 
         self.width = width
         self.height = height
-        block_density = (10, 30)
+        block_density = block_size_range
         base_road_width = 2
         wide_road_width = 4
         highway_width = 6
@@ -125,7 +127,11 @@ class Grid:
                     self.city.grid[c.y, c.x] = -1
 
     def update(self, switch=False):
-        self.switch_traffic_light()
+        if switch:
+            self.switch_traffic_light()
+        
+        for car in self.cars:
+            car.update()
 
     def switch_traffic_light(self):
         mask = np.ma.mask_or(self.city.light_A, self.city.light_B)

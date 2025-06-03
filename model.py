@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import grid as grid_module
+from visualizer import Visualizer
+import time
 
 class Model:
     def __init__(self, 
@@ -12,7 +14,9 @@ class Model:
                  road_remove_probability=0.1,
                  event_chance=0.1,
                  traffic_light_time=10,
-                 move_chance=0.9):
+                 move_chance=0.9,
+                 block_size_range=(10,30)
+                 ):
         
         self.width = width
         self.height = height
@@ -22,6 +26,7 @@ class Model:
         self.move_chance = move_chance
         self.road_remove_probability = road_remove_probability
         self.event_chance = event_chance
+        self.block_size_range = block_size_range
 
     def make_grid(self):
         self.grid = grid_module.Grid(
@@ -29,7 +34,8 @@ class Model:
             height=self.height,
             road_remove_probability=self.road_remove_probability,
             event_chance=self.event_chance,
-            cars_prob=self.cars_prob
+            cars_prob=self.cars_prob,
+            block_size_range=self.block_size_range
         )
 
     def simulate(self):
@@ -37,23 +43,18 @@ class Model:
             self.grid.update(i % self.traffic_light_time == 0)
 
     def simulate_w_plot(self):
-        fig, ax = plt.subplots(figsize=(8, 8))
-        img = np.ones((self.height, self.width, 3), dtype=np.uint8) * 255
-        im = ax.imshow(img, animated=True)
-        ax.set_title("Grid Animation")
-        ax.axis("off")  
+            self.make_grid()
+            viz = Visualizer(self.grid)
 
-        def update_plot(frame):
-            self.grid.update(frame % self.traffic_light_time == 0)
-            new_img = self.grid.get_image()
-            im.set_array(new_img)
-            return [im]
+            for i in range(self.time):
+                toggle = (i % self.traffic_light_time == 0)
+                self.grid.update(toggle)
 
-        ani = animation.FuncAnimation(fig, update_plot, frames=self.time, interval=100, blit=True)
-        plt.show()
+                viz.render(show_cars=True, show_paths=True, show_occupied=False)
 
-if __name__ == "__main__":
-    sim = Model()
-    sim.make_grid()
-    sim.simulate_w_plot()
+                time.sleep(0.2)
+
+            plt.ioff()
+            plt.show()
+
 

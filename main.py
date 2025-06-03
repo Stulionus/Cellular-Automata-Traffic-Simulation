@@ -1,37 +1,28 @@
-from roads import City
+from model import Model
 import time
 
 def main():
     # Configuration
-    width = 200
-    height = 200
+    width = 100
+    height = 100
     block_density = (10, 30)
     base_road_width = 2
     wide_road_width = 4
     highway_width = 6
     road_remove_probability = 0.2
+    time = 10
 
-    start = time.time()
-    # Create city instance
-    city = City(
+    model = Model(
         width=width,
         height=height,
-        block_size_range=block_density,
-        base_road_width=base_road_width,
-        wide_road_width=wide_road_width,
-        highway_width=highway_width,
-        road_remove=road_remove_probability
+        time=time,
+        road_remove_probability=road_remove_probability,
+        event_chance=0.1,
+        traffic_light_time=5,
+        block_size_range=(10,30)
     )
-    time.sleep(1)
-    end = time.time()
-
-    print(f"Total runtime of the program is {end - start} seconds")
-    # Generate roads and plot the result
-    city.generateRoads()
-    city.plot_city_grid()
-    city.animate_traffic(10,1)
-
-    
+    model.make_grid()
+    model.simulate_w_plot()
 
 if __name__ == "__main__":
     main()

@@ -54,6 +54,7 @@ class Cell:
     # --- Car movement & occupancy ---
     def car_enters(self):
         """Call when a car enters the cell."""
+        print("car enters at", self.x, self.y)
         self.occupied = True
         self.occupied_by_car = True
 
