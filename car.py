@@ -2,7 +2,7 @@ import numpy as np
 import random
 import heapq
 from cell import Cell
-
+import time
 class Car:
     def __init__(self, car_id, start_pos, destination, city_grid):
         self.car_id = car_id
@@ -155,8 +155,18 @@ class Car:
         return path
 
     def compute_path(self):
-        self.path = self.a_star_search()
-        self.path = self.path[1:]
+        t2 = time.perf_counter()
+        full_path = self.a_star_search()
+        
+        if len(full_path) <= 1:
+            self.reached = True
+            self.path = []
+        else:
+            self.path = full_path[1:]
+            t3 = time.perf_counter()
+            print(f"Car {self.car_id} took {t3 - t2:.4f} seconds to compute path")
+        
+
 
     def a_star_search(self):
         self.g[:, :] = np.inf
@@ -223,8 +233,13 @@ class Car:
             current_cell.leaving()
             return
 
-        if not self.path:
+        # only compute a new path if we haven’t already determined there is one
+        if not self.path and not self.reached:
             self.compute_path()
+            # if compute_path set reached=True due to no route, just exit
+            if self.reached or not self.path:
+                current_cell.leaving()
+                return
 
         if self.path_index >= len(self.path):
             current_cell.leaving()
