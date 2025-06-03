@@ -125,11 +125,7 @@ class Grid:
                     self.city.grid[c.y, c.x] = -1
 
     def update(self, switch=False):
-        
         self.switch_traffic_light()
-        # for c in self.cars:
-        #     if c.cell_type == 2:
-        #         c.update()
 
     def switch_traffic_light(self):
         mask = np.ma.mask_or(self.city.light_A, self.city.light_B)
