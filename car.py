@@ -209,9 +209,9 @@ class Car:
             next_cell = self.grid[y][x]
 
             # Enforce right-side driving at movement time as well
-            #if not self.is_on_correct_lane(current_y, current_x, y, x):
-            #    print(f"Car {self.car_id} blocked: wrong lane from {(current_y, current_x)} → {(y, x)}.")
-            #    break
+            if not self.is_on_correct_lane(current_y, current_x, y, x):
+                print(f"Car {self.car_id} blocked: wrong lane from {(current_y, current_x)} → {(y, x)}.")
+                break
 
             if random.random() > self.move_probability:
                 print(f"Car {self.car_id} hesitated due to move_probability.")
