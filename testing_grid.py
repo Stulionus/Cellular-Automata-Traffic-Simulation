@@ -46,9 +46,10 @@ for step in range(NUM_STEPS):
                     if cell.getCellType() == 3:
                         cell.switch_traffic_light()
         model.time_step += 1
-        grid.plot_cars()
+      
+  grid.plot_cars()
 
-        ''' 
+  ''' 
         start_cell = grid.cells[car.position[0]][car.position[1]]
         dest_cell = grid.cells[car.destination[0]][car.destination[1]]
 
@@ -67,4 +68,4 @@ for step in range(NUM_STEPS):
 
     grid.plot_cars()
 
-    '''
+  '''
