@@ -6,6 +6,7 @@ from cell import Cell
 class Car:
     def __init__(self, car_id, start_pos, destination, city_grid):
         self.car_id = car_id
+        self.source = start_pos
         self.position = (start_pos[0], start_pos[1])
         self.destination = (destination[0], destination[1])
         self.grid = city_grid
@@ -112,14 +113,18 @@ class Car:
         row, col = self.destination
         while not (self.parent_i[row, col] == row and self.parent_j[row, col] == col):
             path.append((int(row), int(col)))
+            path.append((int(row), int(col)))
             row, col = self.parent_i[row, col], self.parent_j[row, col]
         path.append((int(row), int(col))) #change to int to output coordinates correctly
+        path.append((int(row), int(col))) #change to int to output coordinates correctly
         path.reverse()
+        self.path = path[1:]
         self.path = path[1:]
         return path
 
     def compute_path(self):
         self.path = self.a_star_search()
+        self.path = self.path[1:]
         self.path = self.path[1:]
 
     def a_star_search(self):
@@ -188,6 +193,7 @@ class Car:
         
         if self.reached:
             current_cell.leaving()
+            current_cell.leaving()
             return
         if not self.path:
             self.compute_path()
@@ -196,8 +202,14 @@ class Car:
             current_cell.leaving()
             return
         
+            print(len(self.path))
+        if self.path_index >= len(self.path):
+            current_cell.leaving()
+            return
+        
         for _ in range(int(self.speed)):
             if self.path_index >= len(self.path):
+                current_cell.leaving()
                 current_cell.leaving()
                 break
 
@@ -205,6 +217,7 @@ class Car:
             if not self.is_within_grid(y, x):
                 #print(f"Car {self.car_id} blocked: cell {(y, x)} out of bounds.")
                 break
+
 
             next_cell = self.grid[y][x]
 
@@ -228,15 +241,15 @@ class Car:
             current_cell.leaving()
             next_cell.car_enters()
 
-            self.path_index += 1   
-            self.position = self.path[self.path_index]         
-                    
+            self.path_index += 1
+            self.position = (y, x)
 
             current_cell = next_cell
             current_y, current_x = y, x
 
         self.time_spent += 1
+
         if self.position == self.destination:
             self.reached = True
             current_cell.leaving()
-        self.position = self.path[self.path_index]
+
