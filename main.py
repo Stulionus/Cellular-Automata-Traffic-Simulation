@@ -32,9 +32,10 @@ def main():
     # 2) Measure how long the simulation+plotting loop takes
     t2 = time.perf_counter()
     # model.simulate_w_plot()
-    for i in range(100):
+    for i in range(200):
         model.simulate()
         model.grid.reset_cars()
+        print(f"Time Step: {i}", end="\r", flush=True)
     t3 = time.perf_counter()
     print(f"Simulation (with plotting) took {t3 - t2:.4f} seconds")
 

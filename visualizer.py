@@ -63,43 +63,51 @@ class Visualizer:
 
     def render_traffic_heatmap(self):
         rows, cols = self.grid.height, self.grid.width
+        # 1) Build raw_values with NaN everywhere except roads of interest
         raw_values = np.full((rows, cols), np.nan)
 
         for y in range(rows):
             for x in range(cols):
                 cell = self.grid.cells[y][x]
+                # Only compute a number for road/intersection/etc.
                 if cell and cell.cell_type in (2, 3, 4, 6):
-                    total_time = sum(cell.time_spent_log)         # now > 0
-                    total_cars = cell.total_cars_passed 
-                    if total_cars > 0:
-                        raw_values[y, x] = total_time / (total_cars +1)
-                    else:
-                        raw_values[y, x] = total_time /( total_cars +1)
-        heatmap = np.nan_to_num(raw_values, nan=0.0)
-        max_val = np.max(heatmap)
+                    total_time = sum(cell.time_spent_log)
+                    total_cars = cell.total_cars_passed
+                    # division by (total_cars + 1) to avoid zero‐divide, as before
+                    raw_values[y, x] = total_time / (total_cars + 1)
 
-        fig, ax = plt.subplots(figsize = (10,10))
+        # 2) Mask out any NaN entries; these correspond to “non‑road” cells
+        masked = np.ma.masked_invalid(raw_values)
+
+        # 3) Choose a colormap and tell it to draw masked entries in white
         cmap = plt.cm.Wistia
+        cmap.set_bad(color='white')
 
-        im = ax.imshow (
-            heatmap,
-            cmap = cmap,
-            interpolation = 'nearest',
+        # 4) Compute vmax from the unmasked values (so white cells don’t affect vmax)
+        if np.ma.count(masked) > 0:
+            vmax = masked.max()
+        else:
+            vmax = 0.0
+
+        fig, ax = plt.subplots(figsize=(10, 10))
+        im = ax.imshow(
+            masked,
+            cmap=cmap,
+            interpolation='nearest',
             origin='upper',
-            vmin = 0,
-            vmax = max_val
+            vmin=0,
+            vmax=vmax
         )
+        cbar = fig.colorbar(im, ax=ax, shrink=0.5, pad=0.05)
 
-        cbar = fig.colorbar(im, ax = ax, shrink = 0.5, pad= 0.05)
-        
         ax.set_title("Traffic Density Heatmap", fontsize=16)
         ax.set_xlabel("X", fontsize=12)
         ax.set_ylabel("Y", fontsize=12)
-
         ax.tick_params(axis='both', which='major', labelsize=10)
         ax.grid(False)
         plt.tight_layout()
-        plt.show(block = True)
+        plt.show(block=True)
+
 
         
     
