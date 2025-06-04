@@ -48,7 +48,7 @@ class Model:
     def reset_cars(self):
             self.grid.reset_cars()
 
-    def simulate(self, car_stats=False):
+    def simulate(self, car_stats=True):
         for i in range(self.time):
             toggle = (i % self.traffic_light_time == 0)
             self.grid.update(toggle, current_step=i)
@@ -66,9 +66,14 @@ class Model:
         if car_stats:
             print(f"Simulation complete. {num_reached} out of {total_cars} cars reached destination.")
             for car in self.grid.cars:
-                dist = self.grid.car_dist[car.car_id]
-                tsteps = self.grid.car_time[car.car_id]
-                print(f"  Car {car.car_id}: distance traveled = {dist}, time steps = {tsteps}")
+                #dist = self.grid.car_dist[car.car_id]
+                #tsteps = self.grid.car_time[car.car_id]
+
+                #Use directly from car class to check path and time spent
+                path_index = car.path_index
+                time_spent = car.time_spent
+                print(f"  Car {car.car_id}: Path Index = {path_index}, Time Spent = {time_spent}")
+                #print(f"  Car {car.car_id}: distance traveled = {dist}, time steps = {tsteps}")
 
     def simulate_w_plot(self, car_stats=False):
         viz = Visualizer(self.grid)
@@ -93,11 +98,17 @@ class Model:
 
         if car_stats:
             for car in self.grid.cars:
-                dist = self.grid.car_dist[car.car_id]
-                tsteps = self.grid.car_time[car.car_id]
-                print(f"  Car {car.car_id}: distance traveled = {dist}, time steps = {tsteps}")
+                #dist = self.grid.car_dist[car.car_id]
+                #tsteps = self.grid.car_time[car.car_id]
+
+                #Use directly from car class to check path and time spent
+                path_index = car.path_index
+                time_spent = car.time_spent
+                print(f"  Car {car.car_id}: Path Index = {path_index}, Time Spent = {time_spent}")
+                #print(f"  Car {car.car_id}: distance traveled = {dist}, time steps = {tsteps}")
             print(f"Simulation (with plot) complete. {num_reached} out of {total_cars} cars reached destination.")
 
+        
     def run_many_sims(self, num_sims=100):
         t2 = time.perf_counter()
         for i in range(num_sims):
