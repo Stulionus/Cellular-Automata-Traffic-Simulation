@@ -13,7 +13,7 @@ class City:
         self.wide_road_width = 4
         self.highway_width = 6
         self.road_remove = road_remove
-        self.highway_amount = highway_amount
+        self.highway_amount = highway_amount + 1
         self.medium_road_amount = medium_road_amount
 
 
@@ -65,15 +65,20 @@ class City:
                 else ('h' if h_pos else 'v'))
 
         if axis == 'h':
-            y0 = random.choice(h_pos)
-            start = max(0, y0 + self.base_road_width//2 - self.highway_width//2)
-            end   = min(self.height, start + self.highway_width)
-            y_slice = slice(start + 2, end - 2)
-            self._set_road(y_slice, slice(0, self.width), 6)
-            self.horizontal_roads[y_slice, :] = True
+            horizontal_highways = []
+            for i in range(1, self.highway_amount): 
+                y0 = random.choice(h_pos)
+                horizontal_highways.append(y0)
+                while y0 not in horizontal_highways:
+                    y0 = random.choice(h_pos)
+                start = max(0, y0 + self.base_road_width//2 - self.highway_width//2)
+                end   = min(self.height, start + self.highway_width)
+                y_slice = slice(start + 2, end - 2)
+                self._set_road(y_slice, slice(0, self.width), 6)
+                self.horizontal_roads[y_slice, :] = True
 
-            #Amount of Highways
-            for x0 in random.sample(v_pos, min(len(v_pos), self.highway_amount)):
+            #Amount of Horinzontal Collector Roads
+            for x0 in random.sample(v_pos, min(len(v_pos), self.medium_road_amount)):
                 c0 = max(0, x0 + self.base_road_width//2 - self.wide_road_width//2)
                 c1 = min(self.width, c0 + self.wide_road_width)
                 x_slice = slice(c0 + 1, c1 - 1)
@@ -81,14 +86,19 @@ class City:
                 self.vertical_roads[:, x_slice] = True
 
         else:
-            x0 = random.choice(v_pos)
-            start = max(0, x0 + self.base_road_width//2 - self.highway_width//2)
-            end   = min(self.width, start + self.highway_width)
-            x_slice = slice(start + 2, end - 2)
-            self._set_road(slice(0, self.height), x_slice, 6)
-            self.vertical_roads[:, x_slice] = True
+            vertical_highways = []
+            for i in range(1, self.highway_amount):
+                x0 = random.choice(v_pos)
+                vertical_highways.append(x0)
+                while x0 not in vertical_highways:
+                    x0 = random.choice(v_pos)
+                start = max(0, x0 + self.base_road_width//2 - self.highway_width//2)
+                end   = min(self.width, start + self.highway_width)
+                x_slice = slice(start + 2, end - 2)
+                self._set_road(slice(0, self.height), x_slice, 6)
+                self.vertical_roads[:, x_slice] = True
 
-            #Amount of medium roads
+            #Amount of Vertical Collector Roads
             for y0 in random.sample(h_pos, min(len(h_pos), self.medium_road_amount)):
                 c0 = max(0, y0 + self.base_road_width//2 - self.wide_road_width//2)
                 c1 = min(self.height, c0 + self.wide_road_width)
