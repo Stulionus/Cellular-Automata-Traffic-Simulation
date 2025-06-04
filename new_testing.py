@@ -4,6 +4,8 @@ from visualizer import Visualizer
 
 grid = Grid(100,100,road_remove_probability = 0.1, 
                  event_chance = 0.1, 
+                 highway_amount=1,
+                 medium_road_amount=3,
                  cars_prob= 0.01)
 model = Model(time= 200, traffic_light_time = 2)
 model.grid = grid #grid.cell

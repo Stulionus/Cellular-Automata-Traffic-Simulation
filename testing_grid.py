@@ -1,30 +1,11 @@
-'''
-
-from grid import Grid
-from visualizer import Visualizer
-import time
-
-grid = Grid(100, 100, road_remove_probability=0.1, event_chance=0.1, cars_prob=0.01)
-viz = Visualizer(grid)
-
-for step in range(10):
-    if step % 2 == 0:
-        swithc = True
-    else:
-        swithc = False
-    grid.update(switch=swithc)
-    
-    
-    viz.render(show_cars=True, show_paths=True, show_occupied=False)
-    time.sleep(0.5)             
-'''
-
 from grid import Grid
 from model import Model
 from visualizer import Visualizer
 
 grid = Grid(100,100,road_remove_probability = 0.1, 
                  event_chance = 0.1, 
+                 highway_amount=1,
+                 medium_road_amount=3,
                  cars_prob= 0.01)
 model = Model(time= 200, traffic_light_time = 2)
 model.grid = grid #grid.cell
@@ -44,7 +25,7 @@ for step in range(NUM_STEPS):
         print(f"Car {car.car_id} Start: {car.source}, Destination: {car.destination}")
         
         if not car.reached:
-            car.update()
+            car.update(step)
             y, x = car.position #here
             grid.cells[y][x].addTimeSpent(1)
             #print(f"Updated Position: {car.position}")

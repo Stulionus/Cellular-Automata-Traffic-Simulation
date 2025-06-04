@@ -16,6 +16,7 @@ class Car:
         self.move_probability = 0.90
         self.path_index = 0
         self.left_turn_in_progress = False
+        self.path_not_found_count = 0
 
 
         start_cell_type = self.grid[self.position[0]][self.position[1]].cell_type
@@ -161,6 +162,8 @@ class Car:
         if len(full_path) <= 1:
             self.reached = True
             self.path = []
+            self.path_not_found_count += 1  # Count pathfinding failure
+            print(f"Car {self.car_id}: Path not found {self.path_not_found_count} time(s)")  
         else:
             self.path = full_path[1:]
             # t3 = time.perf_counter()
