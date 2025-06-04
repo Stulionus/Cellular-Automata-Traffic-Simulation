@@ -3,17 +3,19 @@ import matplotlib.pyplot as plt
 import random
 
 class City:
-    def __init__(self, width, height, block_size_range=(5,10),
-                 base_road_width=2, wide_road_width=4, highway_width=6,
-                 road_remove=0.2):
+    def __init__(self, width, height, highway_amount, medium_road_amount,
+                 block_size_range=(5,10), base_road_width=2, road_remove=0.2):
         
         self.width = width
         self.height = height
         self.block_size_range = block_size_range
         self.base_road_width = base_road_width
-        self.wide_road_width = wide_road_width
-        self.highway_width = highway_width
+        self.wide_road_width = 4
+        self.highway_width = 6
         self.road_remove = road_remove
+        self.highway_amount = highway_amount
+        self.medium_road_amount = medium_road_amount
+
 
         self.grid = np.full((height, width), -1.0)
         self.original_roads = np.zeros((height, width), bool)
@@ -70,7 +72,8 @@ class City:
             self._set_road(y_slice, slice(0, self.width), 6)
             self.horizontal_roads[y_slice, :] = True
 
-            for x0 in random.sample(v_pos, min(len(v_pos), random.randint(1,3))):
+            #Amount of Highways
+            for x0 in random.sample(v_pos, min(len(v_pos), self.highway_amount)):
                 c0 = max(0, x0 + self.base_road_width//2 - self.wide_road_width//2)
                 c1 = min(self.width, c0 + self.wide_road_width)
                 x_slice = slice(c0 + 1, c1 - 1)
@@ -85,7 +88,8 @@ class City:
             self._set_road(slice(0, self.height), x_slice, 6)
             self.vertical_roads[:, x_slice] = True
 
-            for y0 in random.sample(h_pos, min(len(h_pos), random.randint(1,3))):
+            #Amount of medium roads
+            for y0 in random.sample(h_pos, min(len(h_pos), self.medium_road_amount)):
                 c0 = max(0, y0 + self.base_road_width//2 - self.wide_road_width//2)
                 c1 = min(self.height, c0 + self.wide_road_width)
                 y_slice = slice(c0 + 1, c1 - 1)
