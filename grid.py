@@ -10,10 +10,12 @@ class Grid:
     def __init__(self, 
                  width, 
                  height, 
+                 highway_amount,
+                 medium_road_amount,
                  road_remove_probability=0.1, 
                  event_chance=0.1, 
                  cars_prob=0.01,
-                 block_size_range=(10,30)
+                 block_size_range=(10,30),
                  ):
 
         self.cells = [[None for _ in range(width)] for _ in range(height)]
@@ -22,19 +24,19 @@ class Grid:
         self.height = height
         block_density = block_size_range
         base_road_width = 2
-        wide_road_width = 4
-        highway_width = 6
         self.road_remove_probability = road_remove_probability
         self.even_chance = event_chance
         self.cars = []
+        self.highway_amount = highway_amount
+        self.medium_road_amount = medium_road_amount
+
 
         self.city = City(
             width=self.width,
             height=self.height,
+            highway_amount=self.highway_amount,
+            medium_road_amount=self.medium_road_amount,
             block_size_range=block_density,
-            base_road_width=base_road_width,
-            wide_road_width=wide_road_width,
-            highway_width=highway_width,
             road_remove=self.road_remove_probability
         )
 
@@ -62,7 +64,7 @@ class Grid:
         #                 self.cells[start[1]][start[0]].car_enters()
         #                 self.cars.append(c)
 
-        num_cars = 30
+        num_cars = 50
 
         local_road_coords = [(cell.x, cell.y) for row in self.cells for cell in row
                      if cell is not None and isinstance(cell, Cell) and cell.getCellType() == 2]
@@ -180,10 +182,10 @@ class Grid:
 
         for car in self.cars:
             if not car.path:
-                car.compute_path()
+               car.compute_path()
 
             for (y, x) in car.path:
-                img[y, x] = [173, 216, 230]
+               img[y, x] = [173, 216, 230]
 
             dy, dx = car.destination
             img[dy, dx] = [128, 0, 128]
