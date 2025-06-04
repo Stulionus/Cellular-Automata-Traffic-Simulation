@@ -10,6 +10,8 @@ class Model:
                  height=200, 
                  width=200,
                  time=100, 
+                 highway_amount=1,
+                 medium_road_amount=3,
                  cars_prob=0.0, 
                  road_remove_probability=0.1,
                  event_chance=0.1,
@@ -27,12 +29,17 @@ class Model:
         self.road_remove_probability = road_remove_probability
         self.event_chance = event_chance
         self.block_size_range = block_size_range
+        self.highway_amount = highway_amount
+        self.medium_road_amount = medium_road_amount
+
 
     def make_grid(self):
         self.grid = grid_module.Grid(
             width=self.width,
             height=self.height,
             road_remove_probability=self.road_remove_probability,
+            highway_amount=self.highway_amount,
+            medium_road_amount=self.medium_road_amount,
             event_chance=self.event_chance,
             cars_prob=self.cars_prob,
             block_size_range=self.block_size_range
@@ -52,7 +59,7 @@ class Model:
         for i in range(self.time):
             toggle = (i % self.traffic_light_time == 0)
             self.grid.update(toggle, current_step=i)
-            viz.render(show_cars=True, show_paths=True, show_occupied=False)
+            viz.render(show_cars=True, show_paths=False, show_occupied=False)
             time.sleep(0.2)
         plt.ioff()
         plt.show()
@@ -75,4 +82,3 @@ class Model:
         viz.render_avg_time_heatmap()
         plt.ioff()
         plt.show()
-
