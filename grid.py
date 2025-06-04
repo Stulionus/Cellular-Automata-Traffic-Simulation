@@ -10,11 +10,11 @@ class Grid:
     def __init__(self, 
                  width, 
                  height, 
+                 num_cars,
                  highway_amount,
                  medium_road_amount,
                  road_remove_probability=0.1, 
                  event_chance=0.1, 
-                 cars_prob=0.01,
                  block_size_range=(10,30),
                  ):
 
@@ -29,7 +29,7 @@ class Grid:
         self.cars = []
         self.highway_amount = highway_amount
         self.medium_road_amount = medium_road_amount
-
+        self.num_cars = num_cars
 
         self.city = City(
             width=self.width,
@@ -45,50 +45,33 @@ class Grid:
         self.city.generateRoads()
         self.roadsToGrid()
 
-        #-------------------------------------------------------------------------------
-        # Keep this here please this will be the final version
-        # the one with num_cars is only being used for testing
-        #-------------------------------------------------------------------------------
-        # for row in self.cells:
-        #     for cell in row:Add commentMore actions
-        #         if cell and cell.cell_type == 2:
-        #             if np.random.rand() < cars_prob:
-        #                 cid = len(self.cars)
-        #                 start = (cell.x, cell.y)
-        #                 if len(local_coords) > 0:
-        #                     y, x = local_coords[np.random.choice(len(local_coords))]
-        #                     dest = (x, y)
-        #                 else:
-        #                     dest = start
-        #                 c = Car(cid, start, dest, self.cells)
-        #                 self.cells[start[1]][start[0]].car_enters()
-        #                 self.cars.append(c)
-
-        num_cars = 30
 
         local_road_coords = [(cell.x, cell.y) for row in self.cells for cell in row
-                     if cell is not None and isinstance(cell, Cell) and cell.getCellType() == 2]
+                    if cell is not None and isinstance(cell, Cell) and cell.getCellType() == 2]
 
-        if num_cars > 0 and len(local_road_coords) >= 2:
-            for cid in range(num_cars):
-                start = local_road_coords[np.random.choice(len(local_road_coords))]
-                dest = local_road_coords[np.random.choice(len(local_road_coords))]
-                while dest == start:
+        if self.num_cars > 0 and len(local_road_coords) >= 2:
+            for cid in range(self.num_cars):
+
+                while True:
+                    start = local_road_coords[np.random.choice(len(local_road_coords))]
                     dest = local_road_coords[np.random.choice(len(local_road_coords))]
+                    if dest == start:
+                        continue
 
-                c = Car(cid, start, dest, self.cells)
+                    c = Car(cid, start, dest, self.cells)
+                    c.compute_path()
+
+                    if c.path:
+                        break
+
                 start_cell = self.cells[start[1]][start[0]]
                 if start_cell is not None:
                     start_cell.car_enters(0)
-                else:
-                    print(f"Warning: Start cell at {start} is None.")
-
-                c.compute_path() 
-                #c.trace_path()
                 self.cars.append(c)
 
         self.car_dist = [None] * len(self.cars)
         self.car_time = [None] * len(self.cars)
+
 
 
     def roadsToGrid(self):
@@ -244,7 +227,6 @@ class Grid:
 
     def reset_cars(self):
         self.cars = []
-        num_cars = 20
         local_road_coords = [
             (cell.x, cell.y)
             for row in self.cells
@@ -252,8 +234,8 @@ class Grid:
             if cell is not None and isinstance(cell, Cell) and cell.getCellType() == 2
         ]
 
-        if num_cars > 0 and len(local_road_coords) >= 2:
-            for cid in range(num_cars):
+        if self.num_cars > 0 and len(local_road_coords) >= 2:
+            for cid in range(self.num_cars):
                 start = local_road_coords[np.random.choice(len(local_road_coords))]
                 dest = local_road_coords[np.random.choice(len(local_road_coords))]
                 while dest == start:

@@ -9,6 +9,7 @@ class Model:
     def __init__(self, 
                  height=200, 
                  width=200,
+                 num_cars=20,
                  time=100, 
                  highway_amount=1,
                  medium_road_amount=3,
@@ -22,6 +23,7 @@ class Model:
         
         self.width = width
         self.height = height
+        self.num_cars=num_cars
         self.cars_prob = cars_prob
         self.time = time
         self.traffic_light_time = traffic_light_time
@@ -37,18 +39,18 @@ class Model:
         self.grid = grid_module.Grid(
             width=self.width,
             height=self.height,
+            num_cars=self.num_cars,
             road_remove_probability=self.road_remove_probability,
             highway_amount=self.highway_amount,
             medium_road_amount=self.medium_road_amount,
             event_chance=self.event_chance,
-            cars_prob=self.cars_prob,
             block_size_range=self.block_size_range
         )
 
     def reset_cars(self):
             self.grid.reset_cars()
 
-    def simulate(self, car_stats=True):
+    def simulate(self, car_stats=False):
         for i in range(self.time):
             toggle = (i % self.traffic_light_time == 0)
             self.grid.update(toggle, current_step=i)
@@ -66,14 +68,9 @@ class Model:
         if car_stats:
             print(f"Simulation complete. {num_reached} out of {total_cars} cars reached destination.")
             for car in self.grid.cars:
-                #dist = self.grid.car_dist[car.car_id]
-                #tsteps = self.grid.car_time[car.car_id]
-
-                #Use directly from car class to check path and time spent
-                path_index = car.path_index
-                time_spent = car.time_spent
-                print(f"  Car {car.car_id}: Path Index = {path_index}, Time Spent = {time_spent}")
-                #print(f"  Car {car.car_id}: distance traveled = {dist}, time steps = {tsteps}")
+                dist = self.grid.car_dist[car.car_id]
+                tsteps = self.grid.car_time[car.car_id]
+                print(f"  Car {car.car_id}: distance traveled = {dist}, time steps = {tsteps}")
 
     def simulate_w_plot(self, car_stats=False):
         viz = Visualizer(self.grid)
@@ -98,25 +95,23 @@ class Model:
 
         if car_stats:
             for car in self.grid.cars:
-                #dist = self.grid.car_dist[car.car_id]
-                #tsteps = self.grid.car_time[car.car_id]
-
-                #Use directly from car class to check path and time spent
-                path_index = car.path_index
-                time_spent = car.time_spent
-                print(f"  Car {car.car_id}: Path Index = {path_index}, Time Spent = {time_spent}")
-                #print(f"  Car {car.car_id}: distance traveled = {dist}, time steps = {tsteps}")
+                dist = self.grid.car_dist[car.car_id]
+                tsteps = self.grid.car_time[car.car_id]
+                print(f"Car {car.car_id}: distance traveled = {dist}, time steps = {tsteps}")
             print(f"Simulation (with plot) complete. {num_reached} out of {total_cars} cars reached destination.")
 
-        
     def run_many_sims(self, num_sims=100):
+        sims100average = np.array([])
         t2 = time.perf_counter()
         for i in range(num_sims):
-           self.simulate()
-           self.grid.reset_cars()
-           print(f"Simulating: {i/num_sims*100:.2f}%", end="\r", flush=True)
+            self.simulate()
+            self.grid.reset_cars()
+            print(f"Simulating: {i/num_sims*100:.2f}%", end="\r", flush=True)
+            num_reached = sum(1 for car in self.grid.cars if car.reached)
+            total_cars = len(self.grid.cars)
         t3 = time.perf_counter()
         print(f"Simulation (with plotting) took {t3 - t2:.4f} seconds")
+        print(f"On average {sims100average:.2f} cars made it out of ")
         self.plot_traffic_heatmap()
         self.plot_car_count_heatmap()
 
