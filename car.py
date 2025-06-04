@@ -163,7 +163,7 @@ class Car:
             self.reached = True
             self.path = []
             self.path_not_found_count += 1  # Count pathfinding failure
-            print(f"Car {self.car_id}: Path not found {self.path_not_found_count} time(s)")  
+            # print(f"Car {self.car_id}: Path not found {self.path_not_found_count} time(s)")  
         else:
             self.path = full_path[1:]
             # t3 = time.perf_counter()

@@ -58,7 +58,7 @@ class Cell:
         Record entry_step so we can later compute steps spent in this cell.
         """
         self.occupied = True
-        self.occupied_by_car = True
+        #self.occupied_by_car = True
         self.total_cars_passed += 1
         self.entry_step = current_step
 
@@ -67,6 +67,8 @@ class Cell:
         Called when a car leaves this cell at simulation step = current_step.
         Compute duration in steps = (current_step - entry_step) and log it.
         """
+        self.occupied_by_car = False
+        
         if self.entry_step is not None:
             duration = current_step - self.entry_step
             self.addTimeSpent(duration)
