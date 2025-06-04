@@ -77,7 +77,7 @@ class Grid:
                 c = Car(cid, start, dest, self.cells)
                 start_cell = self.cells[start[1]][start[0]]
                 if start_cell is not None:
-                    start_cell.car_enters()
+                    start_cell.car_enters(0)
                 else:
                     print(f"Warning: Start cell at {start} is None.")
 
@@ -126,12 +126,12 @@ class Grid:
                     c.cell_type = -1
                     self.city.grid[c.y, c.x] = -1
 
-    def update(self, switch=False):
+    def update(self, switch=False,current_step=1 ):
         if switch:
             self.switch_traffic_light()
         
         for car in self.cars:
-            car.update()
+            car.update(current_step)
 
     def switch_traffic_light(self):
         mask = np.ma.mask_or(self.city.light_A, self.city.light_B)
@@ -263,7 +263,7 @@ class Grid:
                 # Place the car in its start‐cell
                 start_cell = self.cells[start[1]][start[0]]
                 if start_cell is not None:
-                    start_cell.car_enters()
+                    start_cell.car_enters(0)
                 else:
                     print(f"Warning: Start cell at {start} is None.")
 

@@ -52,17 +52,28 @@ class Cell:
             else:  # Red
                 self.occupied = True
 
-    # In Cell class, change car_enters and leaving to record timestamps
-    def car_enters(self):
+    def car_enters(self, current_step):
+        """
+        Called when a car steps into this cell at simulation step = current_step.
+        Record entry_step so we can later compute steps spent in this cell.
+        """
         self.occupied = True
         self.occupied_by_car = True
         self.total_cars_passed += 1
-        self.entry_time = time.perf_counter()  # record when the car arrived
+        self.entry_step = current_step
 
-    def leaving(self):
-        # compute how long that car was in this cell:
-        duration = time.perf_counter() - self.entry_time
-        self.addTimeSpent(duration)
+    def leaving(self, current_step):
+        """
+        Called when a car leaves this cell at simulation step = current_step.
+        Compute duration in steps = (current_step - entry_step) and log it.
+        """
+        if self.entry_step is not None:
+            duration = current_step - self.entry_step
+            self.addTimeSpent(duration)
+        else:
+            # Fallback if for some reason entry_step was never set:
+            self.addTimeSpent(0)
+
         self.occupied_by_car = False
         if self.cell_type != 3 or self.OnOrOff:
             self.occupied = False

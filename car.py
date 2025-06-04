@@ -20,7 +20,7 @@ class Car:
 
         start_cell_type = self.grid[self.position[0]][self.position[1]].cell_type
         self.speed = start_cell_type / 2
-        self.grid[self.position[0]][self.position[1]].car_enters()
+        self.grid[self.position[0]][self.position[1]].car_enters(0)
 
         rows, cols = len(city_grid), len(city_grid[0])
         self.ROW = rows
@@ -225,29 +225,33 @@ class Car:
 
         return [self.position] if not self.reached else []
 
-    def update(self):
+    def update(self, current_step):
+        """
+        current_step: integer simulation step (0, 1, 2, …).
+        """
         current_y, current_x = self.position
         current_cell = self.grid[current_y][current_x]
 
         if self.reached:
-            current_cell.leaving()
+            # If already reached, still call leaving() to free occupancy, passing current_step
+            current_cell.leaving(current_step)
             return
 
-        # only compute a new path if we haven’t already determined there is one
+        # Only compute a new path if needed
         if not self.path and not self.reached:
             self.compute_path()
-            # if compute_path set reached=True due to no route, just exit
             if self.reached or not self.path:
-                current_cell.leaving()
+                # no path → leave occupancy & return
+                current_cell.leaving(current_step)
                 return
 
         if self.path_index >= len(self.path):
-            current_cell.leaving()
+            current_cell.leaving(current_step)
             return
 
         for _ in range(int(self.speed)):
             if self.path_index >= len(self.path):
-                current_cell.leaving()
+                current_cell.leaving(current_step)
                 break
 
             y, x = self.path[self.path_index]
@@ -264,32 +268,28 @@ class Car:
             if random.random() > self.move_probability:
                 break
 
-            # 3) Red‐light check: only when approaching an intersection
-            if next_cell.getCellType() == 3:          # next is an intersection
-                if current_cell.getCellType() != 3:    # we are NOT already on an intersection
-                    if not next_cell.getOnOrOff():     # next light is RED
-                        # print(f"Car {self.car_id} blocked at red light at {(y, x)}.")
-                        break
+            # 3) Red‐light check: only if approaching an intersection
+            if next_cell.getCellType() == 3:
+                if current_cell.getCellType() != 3 and not next_cell.getOnOrOff():
+                    break
 
-            # 4) Occupancy‐by‐another‐car check: only block if next_cell.occupied_by_car is True
+            # 4) Occupancy‐by‐another‐car check
             if next_cell.occupied_by_car:
-                # print(f"Car {self.car_id} blocked: cell {(y, x)} is occupied by another car.")
                 break
 
-            # If we reach here, we can move into next_cell
-            current_cell.leaving()
-            next_cell.car_enters()
+            # → Move succeeds: leave the old cell, then enter the new cell, passing current_step
+            current_cell.leaving(current_step)
+            next_cell.car_enters(current_step)
 
             self.path_index += 1
             self.position = (y, x)
-
             current_cell = next_cell
             current_y, current_x = y, x
 
         self.time_spent += 1
 
-        # If we've reached our destination, mark reached and leave the final cell
         if self.position == self.destination:
             self.reached = True
-            current_cell.leaving()
+            current_cell.leaving(current_step)
+
 

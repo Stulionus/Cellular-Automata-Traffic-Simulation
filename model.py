@@ -42,27 +42,31 @@ class Model:
             self.grid.reset_cars()
 
     def simulate(self):
-            for i in range(self.time):
-                toggle = (i % self.traffic_light_time == 0)
-                self.grid.update(toggle)
+        for i in range(self.time):
+            toggle = (i % self.traffic_light_time == 0)
+            self.grid.update(toggle, current_step=i)
+
 
     def simulate_w_plot(self):
-            viz = Visualizer(self.grid)
+        viz = Visualizer(self.grid)
+        for i in range(self.time):
+            toggle = (i % self.traffic_light_time == 0)
+            self.grid.update(toggle, current_step=i)
+            viz.render(...)
+            time.sleep(0.2)
+        plt.ioff()
+        plt.show()
 
-            for i in range(self.time):
-                toggle = (i % self.traffic_light_time == 0)
-                self.grid.update(toggle)
-
-                viz.render(show_cars=True, show_paths=False, show_occupied=False)
-
-                time.sleep(0.2)
-
-            plt.ioff()
-            plt.show()
 
     def plot_traffic_heatmap(self):
         viz = Visualizer(self.grid)
         viz.render_traffic_heatmap()
+        plt.ioff()
+        plt.show()
+
+    def plot_car_count_heatmap(self):
+        viz = Visualizer(self.grid)
+        viz.render_car_count_heatmap()
         plt.ioff()
         plt.show()
 
