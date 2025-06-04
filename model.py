@@ -52,7 +52,7 @@ class Model:
         for i in range(self.time):
             toggle = (i % self.traffic_light_time == 0)
             self.grid.update(toggle, current_step=i)
-            viz.render(...)
+            viz.render(show_cars=True, show_paths=True, show_occupied=False)
             time.sleep(0.2)
         plt.ioff()
         plt.show()
@@ -67,6 +67,12 @@ class Model:
     def plot_car_count_heatmap(self):
         viz = Visualizer(self.grid)
         viz.render_car_count_heatmap()
+        plt.ioff()
+        plt.show()
+
+    def plot_car_time_heatmap(self):
+        viz = Visualizer(self.grid)
+        viz.render_avg_time_heatmap()
         plt.ioff()
         plt.show()
 
