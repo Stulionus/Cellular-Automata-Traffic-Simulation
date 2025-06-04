@@ -110,13 +110,22 @@ class Model:
 
         
     def run_many_sims(self, num_sims=100):
+        totalCarsPassed = []
         t2 = time.perf_counter()
         for i in range(num_sims):
-           self.simulate(car_stats=False)
-           self.grid.reset_cars()
-           print(f"Simulating: {i/num_sims*100:.2f}%", end="\r", flush=True)
+            #IF YOU WANT TO TURN ON CAR STATS FOR EVERY SIM THAT RUNS
+            self.simulate(car_stats=False)
+            self.grid.reset_cars()
+            print(f"Simulating: {i/num_sims*100:.2f}%", end="\r", flush=True)
+            num_reached = sum(1 for car in self.grid.cars if car.reached)
+            totalCarsPassed.append(num_reached)
+            total_cars = len(self.grid.cars)
+        NPaverage=np.array(totalCarsPassed)
+        sims100average = np.mean(NPaverage)
         t3 = time.perf_counter()
         print(f"Simulation (with plotting) took {t3 - t2:.4f} seconds")
+        #OUT OF 100 SIMS (AVERAGE CARS THAT MAKE IT)
+        print(f"On average {sims100average:.2f} cars made it out of {total_cars}")
         self.plot_traffic_heatmap()
         self.plot_car_count_heatmap()
 
