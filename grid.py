@@ -64,31 +64,34 @@ class Grid:
         #                 self.cells[start[1]][start[0]].car_enters()
         #                 self.cars.append(c)
 
-        num_cars = 30
+        num_cars = 10
 
         local_road_coords = [(cell.x, cell.y) for row in self.cells for cell in row
-                     if cell is not None and isinstance(cell, Cell) and cell.getCellType() == 2]
+                    if cell is not None and isinstance(cell, Cell) and cell.getCellType() == 2]
 
         if num_cars > 0 and len(local_road_coords) >= 2:
             for cid in range(num_cars):
-                start = local_road_coords[np.random.choice(len(local_road_coords))]
-                dest = local_road_coords[np.random.choice(len(local_road_coords))]
-                while dest == start:
-                    dest = local_road_coords[np.random.choice(len(local_road_coords))]
 
-                c = Car(cid, start, dest, self.cells)
+                while True:
+                    start = local_road_coords[np.random.choice(len(local_road_coords))]
+                    dest = local_road_coords[np.random.choice(len(local_road_coords))]
+                    if dest == start:
+                        continue
+
+                    c = Car(cid, start, dest, self.cells)
+                    c.compute_path()
+
+                    if c.path:
+                        break
+
                 start_cell = self.cells[start[1]][start[0]]
                 if start_cell is not None:
                     start_cell.car_enters(0)
-                else:
-                    print(f"Warning: Start cell at {start} is None.")
-
-                c.compute_path() 
-                #c.trace_path()
                 self.cars.append(c)
 
         self.car_dist = [None] * len(self.cars)
         self.car_time = [None] * len(self.cars)
+
 
 
     def roadsToGrid(self):

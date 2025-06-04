@@ -112,7 +112,7 @@ class Model:
     def run_many_sims(self, num_sims=100):
         t2 = time.perf_counter()
         for i in range(num_sims):
-           self.simulate()
+           self.simulate(car_stats=False)
            self.grid.reset_cars()
            print(f"Simulating: {i/num_sims*100:.2f}%", end="\r", flush=True)
         t3 = time.perf_counter()
