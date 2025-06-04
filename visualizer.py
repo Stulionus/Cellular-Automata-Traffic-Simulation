@@ -29,13 +29,15 @@ class Visualizer:
                     img[y, x] = [0, 255, 0] if cell.getOnOrOff() else [255, 0, 0]
         return img
 
-    def render(self, show_cars=True, show_paths=True, show_occupied=False):
-        self.grid.cars = [car for car in self.grid.cars if not car.reached]
+    def render(self, show_cars=True, show_paths=True, show_occupied=False,
+               current_step=None, total_steps=None):
+
+        cars_to_draw = [car for car in self.grid.cars if not car.reached]
 
         base = self._build_base_image()
 
         if show_paths or show_cars:
-            for car in self.grid.cars:
+            for car in cars_to_draw:
                 if show_paths:
                     if not car.path:
                         car.compute_path()
@@ -44,10 +46,7 @@ class Visualizer:
                 if show_cars:
                     cy, cx = car.position
                     if 0 <= cy < self.grid.height and 0 <= cx < self.grid.width:
-                        base[cy, cx] = [255, 165, 0]
-                    # dy, dx = car.destination
-                    # if 0 <= dy < self.grid.height and 0 <= dx < self.grid.width:
-                    #     base[dy, dx] = [128, 0, 128]
+                        base[cy, cx] = [0, 0, 255]
 
         if show_occupied:
             for y in range(self.grid.height):
@@ -58,10 +57,16 @@ class Visualizer:
                             base[y, x] = [255, 0, 0]
 
         self.img_plot.set_data(base)
-        self.ax.set_title("Traffic Grid")
+
+        if current_step is not None and total_steps is not None:
+            self.ax.set_title(f"Traffic Grid  (Step {current_step+1} / {total_steps})")
+        else:
+            self.ax.set_title("Traffic Grid")
+
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
         plt.pause(0.0001)
+
 
 
     def render_traffic_heatmap(self):

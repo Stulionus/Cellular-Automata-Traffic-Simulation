@@ -64,7 +64,7 @@ class Grid:
         #                 self.cells[start[1]][start[0]].car_enters()
         #                 self.cars.append(c)
 
-        num_cars = 50
+        num_cars = 30
 
         local_road_coords = [(cell.x, cell.y) for row in self.cells for cell in row
                      if cell is not None and isinstance(cell, Cell) and cell.getCellType() == 2]
@@ -86,6 +86,9 @@ class Grid:
                 c.compute_path() 
                 #c.trace_path()
                 self.cars.append(c)
+
+        self.car_dist = [None] * len(self.cars)
+        self.car_time = [None] * len(self.cars)
 
 
     def roadsToGrid(self):
@@ -128,12 +131,16 @@ class Grid:
                     c.cell_type = -1
                     self.city.grid[c.y, c.x] = -1
 
-    def update(self, switch=False,current_step=1 ):
+    def update(self, switch=False, current_step=1):
         if switch:
             self.switch_traffic_light()
         
         for car in self.cars:
+            previous_reached = car.reached
             car.update(current_step)
+            if car.reached and not previous_reached:
+                self.car_dist[car.car_id] = car.path_index
+                self.car_time[car.car_id] = car.time_spent
 
     def switch_traffic_light(self):
         mask = np.ma.mask_or(self.city.light_A, self.city.light_B)
@@ -236,14 +243,7 @@ class Grid:
         plt.show()
 
     def reset_cars(self):
-        """
-        Clear the current list of cars, then recreate and place the same number
-        of cars on random road‐cells using the exact logic from __init__().
-        """
-        # 1) Empty out the existing cars list
         self.cars = []
-
-        # 2) Re‐use the same num_cars and local_road_coords logic from __init__
         num_cars = 20
         local_road_coords = [
             (cell.x, cell.y)
@@ -252,7 +252,6 @@ class Grid:
             if cell is not None and isinstance(cell, Cell) and cell.getCellType() == 2
         ]
 
-        # 3) If there are at least two road‐cells, randomly create each Car
         if num_cars > 0 and len(local_road_coords) >= 2:
             for cid in range(num_cars):
                 start = local_road_coords[np.random.choice(len(local_road_coords))]
@@ -261,14 +260,11 @@ class Grid:
                     dest = local_road_coords[np.random.choice(len(local_road_coords))]
 
                 c = Car(cid, start, dest, self.cells)
-
-                # Place the car in its start‐cell
                 start_cell = self.cells[start[1]][start[0]]
                 if start_cell is not None:
                     start_cell.car_enters(0)
-                else:
-                    print(f"Warning: Start cell at {start} is None.")
-
-                # Precompute its path
                 c.compute_path()
                 self.cars.append(c)
+
+        self.car_dist = [None] * len(self.cars)
+        self.car_time = [None] * len(self.cars)
