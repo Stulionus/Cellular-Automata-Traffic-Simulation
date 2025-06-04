@@ -3,9 +3,9 @@ from model import Model
 
 def main():
     # Configuration
-    width =200
-    height =200
-    num_cars=3
+    width =100
+    height =100
+    num_cars=20
     block_density = (10, 30)
     base_road_width = 2
     wide_road_width = 4
@@ -14,7 +14,7 @@ def main():
     medium_road_amount = 4
     road_remove_probability = 0.2
 
-    time_steps = 200
+    time_steps = 300
 
     t0 = time.perf_counter()
     model = Model(
@@ -52,7 +52,6 @@ def main():
 
     # t5 = time.perf_counter()
     # print(f"Car reset took {t5 - t4:.4f} seconds")
-    model.simulate_w_plot(car_stats=True)
 
 if __name__ == "__main__":
     main()
