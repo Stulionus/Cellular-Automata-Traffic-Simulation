@@ -4,7 +4,7 @@ import heapq
 from cell import Cell
 import time
 class Car:
-    def __init__(self, car_id, start_pos, destination, city_grid):
+    def __init__(self, car_id, start_pos, destination, city_grid, move_chance=0.9):
         self.car_id = car_id
         self.source = start_pos
         self.position = (start_pos[0], start_pos[1])
@@ -13,7 +13,7 @@ class Car:
         self.path = []
         self.reached = False
         self.time_spent = 0
-        self.move_probability = 0.90
+        self.move_probability = move_chance
         self.path_index = 0
         self.left_turn_in_progress = False
         self.path_not_found_count = 0

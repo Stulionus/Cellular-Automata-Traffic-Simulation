@@ -64,7 +64,7 @@ def main():
     # —––––– CONFIGURATION —–––––  
     width  = 100
     height = 100
-    num_cars = 20
+    num_cars = 30
     highway_amount = 1
     medium_road_amount = 3
     road_remove_probability = 0.2
@@ -73,8 +73,8 @@ def main():
     time_steps = 500
 
     # Pick the traffic‐light intervals you want to sweep over:
-    traffic_light_times = np.arange(2, 60, 2)
-    sims_per_setting = 10  # run 30 simulations per traffic‐light setting
+    traffic_light_times = np.arange(2, 60, 1)
+    sims_per_setting = 20  # run 30 simulations per traffic‐light setting
 
     t0 = time.perf_counter()
     x_vals, y_vals = sweep_using_collect_times(

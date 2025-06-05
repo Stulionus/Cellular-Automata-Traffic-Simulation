@@ -16,6 +16,7 @@ class Grid:
                  road_remove_probability=0.1, 
                  event_chance=0.1, 
                  block_size_range=(10,30),
+                 move_chance=0.9,
                  ):
 
         self.cells = [[None for _ in range(width)] for _ in range(height)]
@@ -30,6 +31,7 @@ class Grid:
         self.highway_amount = highway_amount
         self.medium_road_amount = medium_road_amount
         self.num_cars = num_cars
+        self.move_chance = move_chance
 
         self.city = City(
             width=self.width,
@@ -58,7 +60,7 @@ class Grid:
                     if dest == start:
                         continue
 
-                    c = Car(cid, start, dest, self.cells)
+                    c = Car(cid, start, dest, self.cells, move_chance=self.move_chance)
                     c.compute_path()
 
                     if c.path:
@@ -241,7 +243,7 @@ class Grid:
                 while dest == start:
                     dest = local_road_coords[np.random.choice(len(local_road_coords))]
 
-                c = Car(cid, start, dest, self.cells)
+                c = Car(cid, start, dest, self.cells, move_chance=self.move_chance)
                 start_cell = self.cells[start[1]][start[0]]
                 if start_cell is not None:
                     start_cell.car_enters(0)

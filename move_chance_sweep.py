@@ -1,4 +1,4 @@
-# block_sweep.py
+# move_sweep.py
 
 import time
 import numpy as np
@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 from model import Model
 
-def sweep_block_densities(
+def sweep_move_chances(
     width,
     height,
     num_cars,
@@ -16,30 +16,32 @@ def sweep_block_densities(
     event_chance,
     traffic_light_time,
     time_steps,
-    block_density_values,
+    block_size_range,
+    move_chance_values,
     sims_per_setting
 ):
     """
-    For each block_size_range in `block_density_values`, build a Model, call make_grid(),
-    then call model.run_many_sims_collect_times(sims_per_setting), which returns the average
-    arrival time. Return (block_density_values, list_of_average_times).
+    For each move_chance in `move_chance_values`, build a Model, call make_grid(),
+    then call model.run_many_sims_collect_times(sims_per_setting), which returns
+    the average arrival time. Return (move_chance_values, list_of_average_times).
     """
     avg_times_list = []
 
-    for bd in block_density_values:
-        print(f"\n=== Block Density = {bd} ===")
-        # 1) Instantiate Model with this block_density
+    for mc in move_chance_values:
+        print(f"\n=== Move Chance = {mc:.2f} ===")
+        # 1) Instantiate Model with this move_chance
         model = Model(
             width=width,
             height=height,
             num_cars=num_cars,
+            time=time_steps,
             highway_amount=highway_amount,
             medium_road_amount=medium_road_amount,
-            time=time_steps,
             road_remove_probability=road_remove_probability,
             event_chance=event_chance,
             traffic_light_time=traffic_light_time,
-            block_size_range=bd
+            move_chance=mc,
+            block_size_range=block_size_range
         )
 
         # 2) Build the grid once
@@ -56,7 +58,7 @@ def sweep_block_densities(
 
         avg_times_list.append(avg_time)
 
-    return block_density_values, avg_times_list
+    return move_chance_values, avg_times_list
 
 
 def main():
@@ -69,34 +71,15 @@ def main():
     road_remove_probability = 0.2
     event_chance = 0.1
     traffic_light_time = 20
-    time_steps = 500
+    time_steps = 600
+    block_size_range = (10, 30)
 
-    # Define the block densities to sweep over as (min_block, max_block)
-    block_density_values = [
-        (20,20),
-        (19,19),
-        (18,18),
-        (17,17),
-        (16,16),
-        (15,15),
-        (14,14),
-        (13,13),
-        (12,12),
-        (11,11),
-        (10,10),
-        (9,9),
-        (8,8),
-        (6,6),
-        (5,5),
-        (4,4),
-        (3,3),
-        (2,2),
-        (1, 1),
-    ]
-    sims_per_setting = 30  # run 10 simulations per block_density
+    
+    move_chance_values = np.arange(0.4, 1.01, 0.02)
+    sims_per_setting = 30
 
     t0 = time.perf_counter()
-    x_vals, y_vals = sweep_block_densities(
+    x_vals, y_vals = sweep_move_chances(
         width = width,
         height = height,
         num_cars = num_cars,
@@ -106,20 +89,20 @@ def main():
         event_chance = event_chance,
         traffic_light_time = traffic_light_time,
         time_steps = time_steps,
-        block_density_values = block_density_values,
+        block_size_range = block_size_range,
+        move_chance_values = move_chance_values,
         sims_per_setting = sims_per_setting
     )
     t1 = time.perf_counter()
 
     print(f"\nCompleted full sweep in {t1 - t0:.2f} seconds.\n")
 
-    # Plot the result: label x-axis by stringified block densities
-    labels = [f"{bd[0]}–{bd[1]}" for bd in x_vals]
+    # Plot the result
     plt.figure(figsize=(8, 5))
-    plt.plot(labels, y_vals, marker='o', linestyle='-')
-    plt.xlabel("Block Density (min–max)")
+    plt.plot(x_vals, y_vals, marker='o', linestyle='-')
+    plt.xlabel("Move Chance")
     plt.ylabel("Average Arrival Time (steps)")
-    plt.title("Avg. Car Arrival Time vs. Block Density")
+    plt.title("Avg. Car Arrival Time vs. Move Chance")
     plt.grid(True)
     plt.tight_layout()
     plt.show()

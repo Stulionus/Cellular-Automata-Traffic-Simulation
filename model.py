@@ -17,7 +17,7 @@ class Model:
                  event_chance=0.1,
                  traffic_light_time=10,
                  move_chance=0.9,
-                 block_size_range=(10,30)
+                 block_size_range=(10,30),
                  ):
         
         self.width = width
@@ -25,12 +25,12 @@ class Model:
         self.num_cars=num_cars
         self.time = time
         self.traffic_light_time = traffic_light_time
-        self.move_chance = move_chance
         self.road_remove_probability = road_remove_probability
         self.event_chance = event_chance
         self.block_size_range = block_size_range
         self.highway_amount = highway_amount
         self.medium_road_amount = medium_road_amount
+        self.move_chance = move_chance
 
 
     def make_grid(self):
@@ -42,7 +42,8 @@ class Model:
             highway_amount=self.highway_amount,
             medium_road_amount=self.medium_road_amount,
             event_chance=self.event_chance,
-            block_size_range=self.block_size_range
+            block_size_range=self.block_size_range,
+            move_chance=self.move_chance
         )
 
     def reset_cars(self):
