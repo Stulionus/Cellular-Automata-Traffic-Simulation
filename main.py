@@ -3,9 +3,9 @@ from model import Model
 
 def main():
     # Configuration
-    width =100
-    height =100
-    num_cars=20
+    width =200
+    height =200
+    num_cars=500
     block_density = (10, 30)
     base_road_width = 2
     wide_road_width = 4
@@ -14,7 +14,7 @@ def main():
     medium_road_amount = 3
     road_remove_probability = 0.2
 
-    time_steps = 300
+    time_steps = 500
 
     t0 = time.perf_counter()
     model = Model(
@@ -34,7 +34,7 @@ def main():
     print(f"Grid creation took {t1 - t0:.4f} seconds")
 
     # model.simulate_w_plot(car_stats=True)
-    model.simulate(car_stats=True)
+    model.simulate_w_plot(car_stats=True)
 
 if __name__ == "__main__":
     main()

@@ -26,7 +26,6 @@ class Visualizer:
               - Green [0, 255, 0] or Red [255, 0, 0] for intersection cells (cell_type == 3),
                 depending on the light state (getOnOrOff).
         """
-        h, w
         h, w = self.grid.height, self.grid.width
         img = np.ones((h, w, 3), dtype=np.uint8) * 255
         for y in range(h):
