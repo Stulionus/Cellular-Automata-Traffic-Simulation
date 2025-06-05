@@ -110,24 +110,45 @@ class Model:
 
         
     def run_many_sims(self, num_sims=100):
-        totalCarsPassed = []
-        t2 = time.perf_counter()
-        for i in range(num_sims):
-            #IF YOU WANT TO TURN ON CAR STATS FOR EVERY SIM THAT RUNS
+        cars_reached_per_sim = []
+        avg_distance_per_sim = []
+
+        start_time = time.perf_counter()
+
+        for sim_index in range(num_sims):
             self.simulate(car_stats=False)
+
+            # Collect distance traveled for each car (path_index > 0)
+            distances = [car.path_index for car in self.grid.cars if car.path_index > 0]
+            average_distance = np.mean(distances) if distances else 0.0
+            avg_distance_per_sim.append(average_distance)
+
+            # Count how many cars reached their destination
+            num_cars_reached = sum(1 for car in self.grid.cars if car.reached)
+            cars_reached_per_sim.append(num_cars_reached)
+
+            # Reset the grid and cars for the next simulation
             self.grid.reset_cars()
-            print(f"Simulating: {i/num_sims*100:.2f}%", end="\r", flush=True)
-            num_reached = sum(1 for car in self.grid.cars if car.reached)
-            totalCarsPassed.append(num_reached)
-            total_cars = len(self.grid.cars)
-        NPaverage=np.array(totalCarsPassed)
-        sims100average = np.mean(NPaverage)
-        t3 = time.perf_counter()
-        print(f"Simulation (with plotting) took {t3 - t2:.4f} seconds")
-        #OUT OF 100 SIMS (AVERAGE CARS THAT MAKE IT)
-        print(f"On average {sims100average:.2f} cars made it out of {total_cars}")
-        self.plot_traffic_heatmap()
-        self.plot_car_count_heatmap()
+
+            print(f"Simulating: {sim_index / num_sims * 100:.2f}%", end="\r", flush=True)
+
+        end_time = time.perf_counter()
+
+        # Final statistics over all simulations
+        avg_cars_reached = np.mean(cars_reached_per_sim)
+        avg_distance_traveled = np.mean(avg_distance_per_sim)
+        total_cars = self.num_cars  # consistent with init
+
+        print("\n")
+        print(f"Total simulation time: {end_time - start_time:.2f} seconds")
+        print(f"Average number of cars that reached destination: {avg_cars_reached:.2f} out of {total_cars}")
+        print(f"Average distance traveled per car over {num_sims} simulations: {avg_distance_traveled:.2f}")
+
+        # Optional visualizations
+        #self.plot_traffic_heatmap()
+        #self.plot_car_count_heatmap()
+        
+
 
     def plot_traffic_heatmap(self):
         viz = Visualizer(self.grid)
