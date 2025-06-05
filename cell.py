@@ -32,6 +32,17 @@ class Cell:
         return self.occupied
 
     def setOnOrOff(self, switch):
+        """
+        Set the traffic light state for this intersection cell and update occupancy.
+
+        Parameters:
+            switch (bool): New light state (True = green, False = red).
+
+        Behavior:
+            - If this cell_type is 3 (intersection), update OnOrOff.
+            - If setting to green and no car is present, mark occupied = False.
+            - If setting to red, mark occupied = True.
+        """
         """Set traffic light state: True = green, False = red."""
         if self.cell_type == 3:
             self.OnOrOff = switch
@@ -43,7 +54,14 @@ class Cell:
                 self.occupied = True
 
     def switch_traffic_light(self):
-        """Toggle the traffic light state and update occupancy accordingly."""
+        """
+        Toggle the traffic light state and adjust occupancy accordingly.
+
+        Behavior:
+            - Flip OnOrOff (green <=> red) if this is an intersection cell (cell_type == 3).
+            - When turning green, mark occupied = False unless a car remains.
+            - When turning red, mark occupied = True.
+        """
         self.OnOrOff = not self.OnOrOff
         if self.cell_type == 3:
             if self.OnOrOff:  # Green
@@ -54,8 +72,15 @@ class Cell:
 
     def car_enters(self, current_step):
         """
-        Called when a car steps into this cell at simulation step = current_step.
-        Record entry_step so we can later compute steps spent in this cell.
+        Record that a car has entered this cell at the given simulation step.
+
+        Parameters:
+            current_step (int): The time step when the car enters.
+
+        Behavior:
+            - Mark this cell as occupied.
+            - Increment total_cars_passed counter.
+            - Store entry_step to compute duration later.
         """
         self.occupied = True
         #self.occupied_by_car = True
@@ -64,8 +89,16 @@ class Cell:
 
     def leaving(self, current_step):
         """
-        Called when a car leaves this cell at simulation step = current_step.
-        Compute duration in steps = (current_step - entry_step) and log it.
+        Record that a car is leaving this cell at the given simulation step.
+
+        Parameters:
+            current_step (int): The time step when the car leaves.
+
+        Behavior:
+            - Compute duration spent = current_step - entry_step, if available.
+            - Append duration to time_spent_log.
+            - Mark occupied_by_car = False.
+            - If not a red-light intersection, set occupied = False.
         """
         self.occupied_by_car = False
         
@@ -99,6 +132,21 @@ class Cell:
 
     # --- Move calculation ---
     def addPossibleMoves(self, city, intersections, horizontal, vertical):
+        """
+        Compute and store all valid movement directions from this cell based on road topology.
+
+        Parameters:
+            city (City): The City object that provides grid and road masks.
+            intersections (np.ndarray): Boolean mask for intersection positions.
+            horizontal (np.ndarray): Boolean mask for horizontal-road cells.
+            vertical (np.ndarray): Boolean mask for vertical-road cells.
+
+        Behavior:
+            - If cell_type == 1 (horizontal), determine canonical east/west direction and allow U-turn if at border.
+            - If cell_type == 2 (vertical), determine canonical north/south direction and allow U-turn if at border.
+            - If cell_type == 3 (intersection), allow movement in any adjacent direction that is a road or intersection.
+            - Otherwise, no moves are added.
+        """
         x, y = self.x, self.y
         grid = city.grid
 
@@ -111,50 +159,48 @@ class Cell:
         def is_intersection(x_, y_):
             return in_bounds(x_, y_) and intersections[y_, x_]
 
-        # Initialize travel_dir
+
         self.travel_dir = None
 
-        # Determine road direction
-        if self.cell_type == 1:  # Horizontal
-            if y > 0 and horizontal[y - 1, x]:  # bottom lane → eastbound
+        if self.cell_type == 1:
+            if y > 0 and horizontal[y - 1, x]:
                 self.travel_dir = (1, 0)
-            elif y + 1 < grid.shape[0] and horizontal[y + 1, x]:  # top lane → westbound
+            elif y + 1 < grid.shape[0] and horizontal[y + 1, x]:
                 self.travel_dir = (-1, 0)
 
-        elif self.cell_type == 2:  # Vertical
-            if x > 0 and vertical[y, x - 1]:  # right lane → northbound
+        elif self.cell_type == 2:
+            if x > 0 and vertical[y, x - 1]:
                 self.travel_dir = (0, -1)
-            elif x + 1 < grid.shape[1] and vertical[y, x + 1]:  # left lane → southbound
+            elif x + 1 < grid.shape[1] and vertical[y, x + 1]:
                 self.travel_dir = (0, 1)
 
-        # Add forward move
         if self.travel_dir:
             dx, dy = self.travel_dir
             fx, fy = x + dx, y + dy
             if in_bounds(fx, fy) and is_road(fx, fy):
                 self.addMove((dx, dy))
             else:
-                # Border detected — allow U-turn to opposite lane and reverse direction
+
                 if self.cell_type == 1:
-                    # Horizontal road U-turn
+
                     if dy == 0:
-                        ny = y - 1 if dx == 1 else y + 1  # move to opposite horizontal lane
-                        ndx = -dx  # reverse direction
+                        ny = y - 1 if dx == 1 else y + 1
+                        ndx = -dx
                         if in_bounds(x, ny) and horizontal[ny, x]:
-                            self.addMove((0, ny - y))  # shift lanes vertically
-                            self.addMove((ndx, 0))     # reverse direction
+                            self.addMove((0, ny - y))
+                            self.addMove((ndx, 0))
 
                 elif self.cell_type == 2:
-                    # Vertical road U-turn
+
                     if dx == 0:
-                        nx = x - 1 if dy == 1 else x + 1  # move to opposite vertical lane
-                        ndy = -dy  # reverse direction
+                        nx = x - 1 if dy == 1 else x + 1 
+                        ndy = -dy 
                         if in_bounds(nx, y) and vertical[y, nx]:
-                            self.addMove((nx - x, 0))     # shift lanes horizontally
-                            self.addMove((0, ndy))        # reverse direction
+                            self.addMove((nx - x, 0)) 
+                            self.addMove((0, ndy))
 
         elif self.cell_type == 3:
-            # Intersection — allow movement in any connected direction
+
             for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                 nx, ny = x + dx, y + dy
                 if in_bounds(nx, ny) and (horizontal[ny, nx] or vertical[ny, nx] or intersections[ny, nx]):

@@ -33,6 +33,15 @@ class Car:
         self.f = np.full((rows, cols), np.inf)
 
     def spawnCar(self):
+        """
+        Select a random valid road cell within the grid to spawn a new car.
+
+        Returns:
+            tuple: (row, col) coordinates of a randomly chosen road cell.
+
+        Behavior:
+            - Repeatedly picks a random coordinate until a cell with attribute 'is_road' is found.
+        """
         while True:
             row = random.randint(0, self.ROW - 1)
             col = random.randint(0, self.COL - 1)
@@ -40,6 +49,17 @@ class Car:
                 return (row, col)
 
     def is_within_grid(self, row, col):
+        """
+        Check if a given (row, col) is a valid road/intersection cell inside the grid.
+
+        Parameters:
+            row (int): Row index to validate.
+            col (int): Column index to validate.
+
+        Returns:
+            bool: True if the position is within bounds and cell type is one of (2, 3, 4, 6).
+                  False otherwise.
+        """
         if not (0 <= row < self.ROW and 0 <= col < self.COL):
             return False
         cell = self.grid[row][col]
@@ -48,16 +68,62 @@ class Car:
         return cell.getCellType() in (2, 3, 4, 6)
 
     def is_destination(self, row, col):
+        """
+        Determine if a given (row, col) matches the car's destination.
+
+        Parameters:
+            row (int): Row index to check.
+            col (int): Column index to check.
+
+        Returns:
+            bool: True if (row, col) equals the destination coordinates.
+        """
         return row == self.destination[0] and col == self.destination[1]
 
     def calculate_heuristic_value(self, row, col):
+        """
+        Compute the Euclidean distance from (row, col) to the destination.
+
+        Parameters:
+            row (int): Current row index.
+            col (int): Current column index.
+
+        Returns:
+            float: Euclidean distance to the destination cell.
+        """
         return ((row - self.destination[0]) ** 2 + (col - self.destination[1]) ** 2) ** 0.5
 
     def is_road_cell(self, row, col):
+        """
+        Check if the cell at (row, col) is a valid road or intersection.
+
+        Parameters:
+            row (int): Row index to check.
+            col (int): Column index to check.
+
+        Returns:
+            bool: True if the cell is not None and its type is in (2, 3, 4, 6).
+        """
         cell = self.grid[row][col]
         return cell is not None and cell.getCellType() in (2, 3, 4, 6)
 
     def is_on_correct_lane(self, i, j, ni, nj):
+        """
+        Enforce right-side driving rules and intersection-turn restrictions.
+
+        Parameters:
+            i (int): Current row index of the car.
+            j (int): Current column index of the car.
+            ni (int): Row index of the prospective next cell.
+            nj (int): Column index of the prospective next cell.
+
+        Returns:
+            bool: True if the move from (i, j) to (ni, nj) is allowed by lane rules:
+                - On straight roads (types 1 or 2), ensures right-side travel.
+                - At intersections (type 3), allows straight and right turns freely; left turns
+                  only if car is positioned in the correct quadrant of the 2×2 intersection.
+                - Otherwise, returns False for illegal lane changes.
+        """
         curr_cell = self.grid[i][j]
         next_cell = self.grid[ni][nj]
         curr_type = curr_cell.getCellType()
@@ -145,6 +211,17 @@ class Car:
 
 
     def trace_path(self):
+        """
+        Reconstruct the path from the destination back to the source using parent pointers.
+
+        Returns:
+            list of tuple: Ordered list of (row, col) coordinates from source to destination,
+                           excluding the source cell itself. If no path, returns empty list.
+
+        Behavior:
+            - Starts at destination, follows parent_i/parent_j back until reaching itself.
+            - Reverses the accumulated list, then removes the first element (source).
+        """
         path = []
         row, col = self.destination
         while not (self.parent_i[row, col] == row and self.parent_j[row, col] == col):
@@ -156,6 +233,15 @@ class Car:
         return path
 
     def compute_path(self):
+        """
+        Compute a new A* path from the current position to the destination.
+
+        Behavior:
+            - Calls a_star_search() to obtain a full path (source included).
+            - If only the source is returned (no path found), mark car as reached=False
+              with an empty path and increment path_not_found_count.
+            - Otherwise, store the returned path excluding the source in self.path.
+        """
         # t2 = time.perf_counter()
         full_path = self.a_star_search()
         
@@ -172,6 +258,26 @@ class Car:
 
 
     def a_star_search(self):
+        """
+        Perform A* search to find a valid route from current position to destination,
+        taking into account right‐side driving and intersection rules.
+
+        Returns:
+            list of tuple: Full sequence from current position to destination (inclusive).
+                           If no path is found, returns a list containing only the current position.
+
+        Behavior:
+            - Initializes g, h, f arrays to infinity and parent pointers to -1.
+            - Sets starting cell's g=0, h=heuristic, f=h, and parent as itself.
+            - Uses a min‐heap (open_list) to repeatedly expand lowest-f cell.
+            - For each neighbor (up, down, left, right):
+              * Skip if out of bounds or not a valid road cell.
+              * Enforce is_on_correct_lane() for right‐side driving.
+              * If neighbor is destination, set parent and immediately trace_path().
+              * Otherwise, compute tentative g_new= g[current]+1, h_new, f_new.
+              * If f_new < existing f[ni,nj], update g/h/f, set parent, and push to open_list.
+            - If open_list is exhausted, return [current_position].
+        """
         self.g[:, :] = np.inf
         self.h[:, :] = np.inf
         self.f[:, :] = np.inf
@@ -230,7 +336,24 @@ class Car:
 
     def update(self, current_step):
         """
-        current_step: integer simulation step (0, 1, 2, …).
+        Advance the car by attempting to move along its computed path for one time step.
+
+        Parameters:
+            current_step (int): The current simulation time step.
+
+        Behavior:
+            1. If the car has already reached its destination, call leaving() on current cell and return.
+            2. If no valid path is stored, call compute_path(). If still no path or car has reached, leave occupancy and return.
+            3. For up to int(speed) iterations:
+               a. Determine next cell (y, x) from self.path at self.path_index.
+               b. Check if move is within grid, allowed by is_on_correct_lane(), and passes a random hesitation check.
+               c. If next cell is an intersection with red light, break.
+               d. If next cell is occupied_by_car, break.
+               e. If all checks pass, call leaving(current_step) on current cell, call car_enters(current_step) on next cell,
+                  increment path_index, update position, set current_cell to next_cell, and continue loop.
+               f. Otherwise, break and wait until next time step.
+            4. Increment time_spent by 1.
+            5. If new position equals destination, set reached=True and call leaving() on that cell.
         """
         current_y, current_x = self.position
         current_cell = self.grid[current_y][current_x]

@@ -27,6 +27,20 @@ class City:
         self.light_B = np.zeros((height, width), bool)
 
     def _set_road(self, y_slice, x_slice, road_value, record_original=False):
+        """
+        Apply a rectangular road of a given type to a subregion of the grid.
+
+        Parameters:
+            y_slice (slice): Row range where the road is placed.
+            x_slice (slice): Column range where the road is placed.
+            road_value (int): Road code (e.g., 2=primary, 4=medium, 6=highway).
+            record_original (bool): If True, mark these cells as part of original_roads.
+
+        Behavior:
+            - Compares priority of new road_value against existing grid values.
+            - Overwrites cells only if new road has higher priority.
+            - Optionally updates original_roads mask.
+        """
         ys, ye = y_slice.start or 0, y_slice.stop or self.height
         xs, xe = x_slice.start or 0, x_slice.stop or self.width
         current = self.grid[ys:ye, xs:xe]
@@ -39,6 +53,19 @@ class City:
         self.grid[ys:ye, xs:xe][mask] = road_value
 
     def _spaced_positions(self, length):
+        """
+        Generate a list of evenly or randomly spaced positions based on block sizes.
+
+        Parameters:
+            length (int): Total size (height or width) along which to generate positions.
+
+        Returns:
+            list[int]: A list of starting indices for base roads spaced by random block sizes.
+
+        Behavior:
+            - Starts at a random offset within block_size_range.
+            - Continues adding positions until reaching near the grid boundary.
+        """
         pos = random.randint(*self.block_size_range)
         out = []
         while pos < length - self.base_road_width:
@@ -47,6 +74,19 @@ class City:
         return out
 
     def generateRoads(self):
+        """
+        Generate a complete road network with primary, highway, and collector roads.
+
+        Behavior:
+            1. Determine horizontal and vertical base road positions.
+            2. Lay down primary roads (value 2) and mark corresponding masks.
+            3. Randomly choose orientation ('h' or 'v') for adding highways and medium roads.
+            4. Add highways (value 6) at selected positions with higher priority.
+            5. Add medium‐width collector roads (value 4) at random sample of base positions.
+            6. Randomly remove contiguous road segments between block intersections based on road_remove probability.
+            7. Compute intersection mask as overlap of horizontal_roads & vertical_roads.
+            8. Assign traffic light masks (light_A and light_B) via _assign_light_masks().
+        """
         h_pos = self._spaced_positions(self.height)
         v_pos = self._spaced_positions(self.width)
 
@@ -131,6 +171,18 @@ class City:
 
 
     def _assign_light_masks(self):
+        """
+        Assign traffic light groups (A and B) to each connected intersection component.
+
+        Behavior:
+            1. Iterate over all intersection cells (intersections == True).
+            2. Perform a DFS/BFS to find connected component of adjacent intersections.
+            3. Compute bounding box (rmin, rmax, cmin, cmax) for the component.
+            4. Compute center (rmid, cmid).
+            5. For each cell in the component:
+               - If (row < rmid and col < cmid) or (row >= rmid and col >= cmid), set light_A True.
+               - Else, set light_B True.
+        """
         h, w = self.intersections.shape
         self.light_A[:] = False
         self.light_B[:] = False
@@ -168,6 +220,16 @@ class City:
 
 
     def _build_rgb(self):
+        """
+        Create an RGB array representing the static city grid without traffic lights.
+
+        Returns:
+            np.ndarray: A (height, width, 3) uint8 array where:
+              - [250, 250, 250] for empty (value -1).
+              - [180, 180, 180] for primary roads (value 2).
+              - [100, 100, 100] for medium roads (value 4).
+              - [0,   0,   0] for highways (value 6).
+        """
         cmap = {-1:[250,250,250], 2:[180,180,180], 4:[100,100,100], 6:[0,0,0]}
         rgb = np.zeros((self.height, self.width, 3), np.uint8)
         for k,c in cmap.items():
@@ -175,6 +237,14 @@ class City:
         return rgb
 
     def plot_city_grid(self):
+        """
+        Render a static image of the city’s road network with intersections highlighted.
+
+        Behavior:
+            - Builds an RGB image via _build_rgb().
+            - Colors intersection cells red [255, 0, 0].
+            - Displays the image with Matplotlib without axes.
+        """
         rgb = self._build_rgb()
         rgb[self.intersections] = [255,0,0]
         plt.figure(figsize=(10,10))
@@ -183,6 +253,23 @@ class City:
         plt.show()
 
     def animate_traffic(self, steps, interval=0.5):
+        """
+        Animate alternating traffic light states over the city grid.
+
+        Parameters:
+            steps (int): Number of animation frames (time ticks).
+            interval (float): Pause duration (in seconds) between frames.
+
+        Behavior:
+            - Enables interactive mode.
+            - For each frame t in [0..steps-1]:
+              - Build base RGB via _build_rgb().
+              - If t is even, show light_A as green [0, 255, 0] and light_B as red [255, 0, 0].
+              - If t is odd, swap colors (A=red, B=green).
+              - Clear axes and redraw the image.
+              - Pause for the given interval.
+            - After loop, turn off interactive mode and show final frame.
+        """
         plt.ion()
         fig, ax = plt.subplots(figsize=(10,10))
         for t in range(steps):

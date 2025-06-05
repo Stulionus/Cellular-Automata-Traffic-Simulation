@@ -47,7 +47,7 @@ class Grid:
         self.city.generateRoads()
         self.roadsToGrid()
 
-
+        # Generate random car positions and assign them to the grid
         local_road_coords = [(cell.x, cell.y) for row in self.cells for cell in row
                     if cell is not None and isinstance(cell, Cell) and cell.getCellType() == 2]
 
@@ -77,6 +77,16 @@ class Grid:
 
 
     def roadsToGrid(self):
+        """
+        Convert the City's numeric grid into Cell objects and store them in self.cells.
+
+        For each position (y, x) in City.grid:
+          1. Determine the cell_type based on road value or intersection mask.
+          2. Instantiate a Cell with the correct type.
+          3. Add possible moves (neighbors) based on City’s road topology.
+          4. Set the traffic light state on intersection cells.
+          5. Initialize occupancy flags for each cell.
+        """
         for y in range(self.height):
             for x in range(self.width):
                 value = self.city.grid[y, x]
@@ -110,6 +120,17 @@ class Grid:
                     
 
     def add_Random_events(self, event_chance=0.1):
+        """
+        Randomly convert some road cells into blocked cells based on event chance.
+
+        Parameters:
+            event_chance (float): Probability that any given road cell (cell_type == 2)
+                                  becomes blocked (cell_type = -1) in this update.
+
+        Iterates over each cell:
+         - If cell_type == 2 (standard road) and a random draw < event_chance,
+           set cell_type to -1 and update the corresponding entry in City.grid.
+        """
         for row in self.cells:
             for c in row:
                 if c and c.cell_type == 2 and np.random.rand() < event_chance:
@@ -117,6 +138,21 @@ class Grid:
                     self.city.grid[c.y, c.x] = -1
 
     def update(self, switch=False, current_step=1):
+        """
+        Advance simulation by one time step: possibly toggle lights, then move all cars.
+
+        Parameters:
+            switch (bool): If True, toggle all traffic lights before moving cars.
+            current_step (int): The current simulation time step (used by Car.update).
+
+        Behavior:
+          1. If switch is True, call switch_traffic_light() to flip all light states.
+          2. For each car:
+             a. Remember whether it had already reached its destination.
+             b. Call car.update(current_step) to attempt a move or wait.
+             c. If the car reaches destination in this step and was not previously reached,
+                record its final path index and time spent.
+        """
         if switch:
             self.switch_traffic_light()
         
@@ -128,6 +164,13 @@ class Grid:
                 self.car_time[car.car_id] = car.time_spent
 
     def switch_traffic_light(self):
+        """
+        Toggle the state of all intersection traffic lights on the grid.
+
+        Finds all positions where either light_A or light_B is True (masked).
+        For each such position, retrieve the corresponding Cell and
+        call its switch_traffic_light() method to flip its light state.
+        """
         mask = np.ma.mask_or(self.city.light_A, self.city.light_B)
         for y, x in zip(*np.where(mask)):
             cell = self.cells[y][x]
@@ -135,6 +178,16 @@ class Grid:
                 cell.switch_traffic_light()
 
     def plot(self):
+        """
+        Render a static image of the grid with road classes and intersection states.
+
+        Creates an RGB image of shape (height, width, 3) with:
+          - Light gray [200, 200, 200] for standard roads (cell_type == 2)
+          - Medium gray [100, 100, 100] for medium roads (cell_type == 4)
+          - Black [0, 0, 0] for highways (cell_type == 6)
+          - Green [0, 255, 0] or Red [255, 0, 0] for intersection lights (cell_type == 3)
+        Displays the image with matplotlib, hides axes, and adds a title.
+        """
         img = np.ones((self.height, self.width, 3), dtype=np.uint8) * 255
 
         for y in range(self.height):
@@ -157,6 +210,18 @@ class Grid:
         plt.show()
 
     def plot_cars(self):
+        """
+        Render a static image showing all cars’ paths and positions on the grid.
+
+        Steps:
+          1. Create base image coloring roads and intersections exactly as in plot().
+          2. For each car:
+             a. Ensure its path is computed.
+             b. Mark each cell in car.path with light-blue [173, 216, 230].
+             c. Mark the car’s destination with purple [128, 0, 128].
+             d. Mark the car’s current position with orange [255, 165, 0].
+          3. Display the resulting image with matplotlib, hide axes, and add a title.
+        """
         img = np.ones((self.height, self.width, 3), dtype=np.uint8) * 255
 
         for y in range(self.height):
@@ -192,6 +257,17 @@ class Grid:
         plt.show()
 
     def get_image(self):
+        """
+        Generate and return an RGB image of the current grid state (no cars).
+
+        Returns:
+            np.ndarray: An array of shape (height, width, 3) with:
+              - White [255, 255, 255] for empty cells.
+              - Light gray [200, 200, 200] for standard roads (cell_type == 2).
+              - Medium gray [100, 100, 100] for medium roads (cell_type == 4).
+              - Black [0, 0, 0] for highways (cell_type == 6).
+              - Green [0, 255, 0] or Red [255, 0, 0] for intersections (cell_type == 3).
+        """
         img = np.ones((self.height, self.width, 3), dtype=np.uint8) * 255
 
         for y in range(self.height):
@@ -209,6 +285,16 @@ class Grid:
         return img
 
     def plot_occupied(self):
+        """
+        Render a static image showing which cells are currently occupied by cars.
+
+        Creates an RGB image:
+          - White [255, 255, 255] for non-road or non-intersection empty cells.
+          - Dark gray [169, 169, 169] for road/intersection cells that are not occupied.
+          - Red [255, 0, 0] for any occupied road/intersection cell.
+
+        Displays the image with matplotlib, hides axes, and adds a title.
+        """
         img = np.ones((self.height, self.width, 3), dtype=np.uint8) * 255
 
         for y in range(self.height):
@@ -228,6 +314,18 @@ class Grid:
         plt.show()
 
     def reset_cars(self):
+        """
+        Remove all existing cars and reinitialize them at random road positions.
+
+        Steps:
+          1. Clear the self.cars list.
+          2. Recompute the list of all road cell coordinates (cell_type == 2).
+          3. For each car index from 0 to num_cars-1:
+             a. Randomly select a start and destination road cell (ensuring they differ).
+             b. Instantiate a new Car with that start/destination and compute its path.
+             c. Mark the starting cell as occupied and append the car to self.cars.
+          4. Reset self.car_dist and self.car_time lists to track each new car’s progress.
+        """
         self.cars = []
         local_road_coords = [
             (cell.x, cell.y)

@@ -14,6 +14,19 @@ class Visualizer:
         plt.show()
         
     def _build_base_image(self):
+        """
+        Construct an RGB array representing static road and intersection layout.
+
+        Returns:
+            np.ndarray: A (height, width, 3) uint8 array where:
+              - White [255, 255, 255] is default background.
+              - Light gray [200, 200, 200] for standard roads (cell_type == 2).
+              - Medium gray [100, 100, 100] for medium roads (cell_type == 4).
+              - Black [0, 0, 0] for highways (cell_type == 6).
+              - Green [0, 255, 0] or Red [255, 0, 0] for intersection cells (cell_type == 3),
+                depending on the light state (getOnOrOff).
+        """
+        h, w
         h, w = self.grid.height, self.grid.width
         img = np.ones((h, w, 3), dtype=np.uint8) * 255
         for y in range(h):
@@ -31,7 +44,24 @@ class Visualizer:
 
     def render(self, show_cars=True, show_paths=True, show_occupied=False,
                current_step=None, total_steps=None):
+        """
+        Update the displayed grid image by overlaying cars, paths, and occupancy.
 
+        Parameters:
+            show_cars (bool): If True, mark car positions in blue [0, 0, 255].
+            show_paths (bool): If True, draw each car's planned path in light blue [173, 216, 230].
+            show_occupied (bool): If True, mark occupied cells (road/intersection) in red [255, 0, 0].
+            current_step (int or None): Current simulation step (for title). If None, omit step info.
+            total_steps (int or None): Total number of steps (for title). If None, omit step info.
+
+        Behavior:
+            - Builds a fresh base image of roads/intersections each call.
+            - Overlays paths and car positions for cars that have not yet reached their destinations.
+            - If show_occupied is True, colors any cell with occupied==True in red.
+            - Updates the displayed image data in-place.
+            - Sets a title indicating "Step X / Y" if step parameters are provided.
+            - Redraws and pauses briefly (0.0001s) to allow GUI update.
+        """
         cars_to_draw = [car for car in self.grid.cars if not car.reached]
 
         base = self._build_base_image()
@@ -70,6 +100,19 @@ class Visualizer:
 
 
     def render_traffic_heatmap(self):
+        """
+        Display a heatmap showing traffic throughput at each cell.
+
+        For each road/intersection cell:
+          - Compute total_time = sum(time_spent_log).
+          - Compute total_cars = total_cars_passed.
+          - If total_cars > 0 and total_time > 0, set raw_values[y, x] = (total_cars^2) / total_time.
+          - Otherwise, set raw_values[y, x] = 0.0.
+        Non-road cells remain NaN (masked out).
+
+        Renders a color‐mapped image (white background for NaN) with a colorbar. 
+        Title: "Traffic Throughput Heatmap".
+        """
         rows, cols = self.grid.height, self.grid.width
         raw_values = np.full((rows, cols), np.nan)
 
@@ -116,6 +159,15 @@ class Visualizer:
 
 
     def render_car_count_heatmap(self):
+        """
+        Display a heatmap of how many cars passed through each cell.
+
+        For each road/intersection cell, raw_values[y, x] = total_cars_passed.
+        Non-road cells remain NaN (masked out).
+
+        Renders a color‐mapped image (white background for NaN) with a colorbar.
+        Title: "Cars‐Per‐Cell Heatmap".
+        """
         rows, cols = self.grid.height, self.grid.width
         raw_values = np.full((rows, cols), np.nan)
 
@@ -156,6 +208,18 @@ class Visualizer:
 
 
     def render_avg_time_heatmap(self):
+        """
+        Display a heatmap of the average time each car spent in each cell.
+
+        For each road/intersection cell:
+          - total_time = sum(time_spent_log)
+          - total_cars = total_cars_passed
+          - If total_cars > 0, raw_values[y, x] = total_time / total_cars; otherwise, 0.0.
+        Non-road cells remain NaN (masked out).
+
+        Renders a color‐mapped image (white background for NaN) with a colorbar.
+        Title: "Average Steps Per Car Heatmap".
+        """
         rows, cols = self.grid.height, self.grid.width
         raw_values = np.full((rows, cols), np.nan)
 

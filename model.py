@@ -34,6 +34,13 @@ class Model:
 
 
     def make_grid(self):
+        """
+        Create and assign a new Grid object to this Model.
+
+        This method instantiates a Grid from the grid_module with the model's
+        parameters). After calling this method, self.grid will hold a fully constructed Grid
+        ready for simulation.
+        """
         self.grid = grid_module.Grid(
             width=self.width,
             height=self.height,
@@ -47,9 +54,31 @@ class Model:
         )
 
     def reset_cars(self):
+            """
+            Reset all cars in the current grid to their initial state.
+
+            This method calls the Grid.reset_cars() function, which generate a new list 
+            of cars at new random positions and assigns them to the grid.
+            """
             self.grid.reset_cars()
 
     def simulate(self, car_stats=True):
+        """
+        Run a traffic simulation for the configured number of time steps without visualization.
+
+        For each time step:
+          - Toggle traffic lights if the current step is a multiple of traffic_light_time.
+          - Update the grid (move cars)
+          - Collect car movement information.
+
+        After all time steps:
+          - Compute how many cars reached their destination.
+          - If car_stats is True, print the total number of cars that reached and,
+            for each car, its final path index and total time spent.
+
+        Parameters:
+            car_stats (bool): If True, print per-car statistics at the end of the run.
+        """
         for i in range(self.time):
             toggle = (i % self.traffic_light_time == 0)
             self.grid.update(toggle, current_step=i)
@@ -57,7 +86,7 @@ class Model:
             for car in self.grid.cars:
                 cid = car.car_id
                 if self.grid.car_dist[cid] is None:
-                    # didn’t reach during the run → record whatever it has now:
+
                     self.grid.car_dist[cid] = car.path_index
                     self.grid.car_time[cid] = car.time_spent
 
@@ -67,16 +96,30 @@ class Model:
         if car_stats:
             print(f"Simulation complete. {num_reached} out of {total_cars} cars reached destination.")
             for car in self.grid.cars:
-                #dist = self.grid.car_dist[car.car_id]
-                #tsteps = self.grid.car_time[car.car_id]
 
-                #Use directly from car class to check path and time spent
                 path_index = car.path_index
                 time_spent = car.time_spent
                 print(f"  Car {car.car_id}: Path Index = {path_index}, Time Spent = {time_spent}")
                 #print(f"  Car {car.car_id}: distance traveled = {dist}, time steps = {tsteps}")
 
     def simulate_w_plot(self, car_stats=False):
+        """
+        Run a traffic simulation with a live visualization.
+
+        This method creates a Visualizer for the current grid. For each time step:
+          - Toggle traffic lights if needed.
+          - Update the grid state.
+          - Render the grid, showing cars but hiding their full paths and occupancy details.
+          - Pause briefly (0.01 seconds) to animate the update.
+
+        After simulation:
+          - Turn off interactive plotting and show the final static image.
+          - Record any cars that did not reach their destination.
+          - If car_stats is True, print per-car statistics and the total reached count.
+
+        Parameters:
+            car_stats (bool): If True, print per-car statistics at the end of the run.
+        """
         viz = Visualizer(self.grid)
         for i in range(self.time):
             toggle = (i % self.traffic_light_time == 0)
@@ -99,10 +142,6 @@ class Model:
 
         if car_stats:
             for car in self.grid.cars:
-                #dist = self.grid.car_dist[car.car_id]
-                #tsteps = self.grid.car_time[car.car_id]
-
-                #Use directly from car class to check path and time spent
                 path_index = car.path_index
                 time_spent = car.time_spent
                 print(f"  Car {car.car_id}: Path Index = {path_index}, Time Spent = {time_spent}")
@@ -111,6 +150,24 @@ class Model:
 
         
     def run_many_sims(self, num_sims=100):
+        """
+        Execute multiple back‐to‐back simulations and report aggregated statistics.
+
+        For each of num_sims iterations:
+          - Run a single simulation (without per-step printing).
+          - Compute each car’s distance traveled (path_index) and record the average.
+          - Count how many cars reached their destination.
+          - Reset the grid’s cars before the next simulation.
+          - Print a progress percentage in‐place.
+
+        After all simulations:
+          - Print the total elapsed wall‐clock time for all runs.
+          - Print the average number of cars that reached their destination and
+            the average distance traveled per car.
+
+        Parameters:
+            num_sims (int): Number of independent simulations to run.
+        """
         cars_reached_per_sim = []
         avg_distance_per_sim = []
 
@@ -149,21 +206,38 @@ class Model:
         #self.plot_traffic_heatmap()
         #self.plot_car_count_heatmap()
         
-
-
     def plot_traffic_heatmap(self):
+        """
+        Display a heatmap representing traffic density over the grid.
+
+        This method instantiates a Visualizer for the current grid and calls
+        its render_traffic_heatmap() function, which renders a color‐coded map
+        indicating how often each cell was occupied by a car during the last run.
+        """
         viz = Visualizer(self.grid)
         viz.render_traffic_heatmap()
         plt.ioff()
         plt.show()
 
     def plot_car_count_heatmap(self):
+        """
+        Display a heatmap representing the number of cars that passed through each cell.
+
+        This method creates a Visualizer for the current grid and calls
+        render_car_count_heatmap(), which shows how many unique cars visited each cell.
+        """
         viz = Visualizer(self.grid)
         viz.render_car_count_heatmap()
         plt.ioff()
         plt.show()
 
     def plot_car_time_heatmap(self):
+        """
+        Display a heatmap representing average time spent by cars in each cell.
+
+        This method uses a Visualizer to render a map where each cell’s color intensity
+        corresponds to the average time cars spent occupying that cell during the last run.
+        """
         viz = Visualizer(self.grid)
         viz.render_avg_time_heatmap()
         plt.ioff()
@@ -171,25 +245,38 @@ class Model:
 
     def run_many_sims_collect_times(self, num_sims=100):
         """
-        Run `num_sims` back‐to‐back simulations, collect every car.time_spent
-        for cars that reached their destination, and return the average of those times.
+        Run multiple simulations and collect arrival times for cars that reached their destination.
+
+        For each of num_sims iterations:
+          1. Run a single simulation (suppressing per‐car output).
+          2. Append each reached car’s time_spent to a master list.
+          3. Reset the grid’s cars before the next iteration.
+          4. Print a progress indicator in‐place.
+
+        After all runs:
+          - Print the total wall‐clock time and the total number of collected times.
+          - Compute and print the average arrival time across all reached cars.
+          - Return the average arrival time. If no cars reached in any run, returns NaN.
+
+        Parameters:
+            num_sims (int): Number of independent simulations to collect data from.
+
+        Returns:
+            float: The average arrival time across all cars that reached their destination.
         """
         all_reached_times = []
         t0 = time.perf_counter()
 
         for sim_idx in range(num_sims):
-            # 1) Run one simulation (no per‐car printing)
+
             self.simulate(car_stats=False)
 
-            # 2) Collect time_spent from each car that reached
             for car in self.grid.cars:
                 if car.reached:
                     all_reached_times.append(car.time_spent)
 
-            # 3) Reset cars for next iteration
             self.grid.reset_cars()
 
-            # 4) Progress indicator (optional)
             print(f"  [Collect] sims run: {sim_idx+1}/{num_sims}", end="\r", flush=True)
 
         t1 = time.perf_counter()
