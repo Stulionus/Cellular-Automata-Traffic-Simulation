@@ -80,7 +80,7 @@ class Model:
         for i in range(self.time):
             toggle = (i % self.traffic_light_time == 0)
             self.grid.update(toggle, current_step=i)
-            viz.render(show_cars=True, show_paths=True, show_occupied=False,
+            viz.render(show_cars=True, show_paths=False, show_occupied=False,
             current_step=i, total_steps=self.time)
             time.sleep(0.01)
 
@@ -146,3 +146,39 @@ class Model:
         viz.render_avg_time_heatmap()
         plt.ioff()
         plt.show()
+
+    def run_many_sims_collect_times(self, num_sims=100):
+        """
+        Run `num_sims` back‐to‐back simulations, collect every car.time_spent
+        for cars that reached their destination, and return the average of those times.
+        """
+        all_reached_times = []
+        t0 = time.perf_counter()
+
+        for sim_idx in range(num_sims):
+            # 1) Run one simulation (no per‐car printing)
+            self.simulate(car_stats=False)
+
+            # 2) Collect time_spent from each car that reached
+            for car in self.grid.cars:
+                if car.reached:
+                    all_reached_times.append(car.time_spent)
+
+            # 3) Reset cars for next iteration
+            self.grid.reset_cars()
+
+            # 4) Progress indicator (optional)
+            print(f"  [Collect] sims run: {sim_idx+1}/{num_sims}", end="\r", flush=True)
+
+        t1 = time.perf_counter()
+        print(
+            f"\n  → Completed collection of {num_sims} sims in {t1 - t0:.2f}s, "
+            f"gathered {len(all_reached_times)} reached‐times."
+        )
+
+        if not all_reached_times:
+            return float('nan')
+
+        avg_time = np.mean(all_reached_times)
+        print(f"  → Average arrival time over all reached cars: {avg_time:.2f} steps")
+        return avg_time

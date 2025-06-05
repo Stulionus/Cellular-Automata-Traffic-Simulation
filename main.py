@@ -10,8 +10,8 @@ def main():
     base_road_width = 2
     wide_road_width = 4
     highway_width = 6
-    highway_amount = 4
-    medium_road_amount = 4
+    highway_amount = 1
+    medium_road_amount = 3
     road_remove_probability = 0.2
 
     time_steps = 300
@@ -33,25 +33,8 @@ def main():
     t1 = time.perf_counter()
     print(f"Grid creation took {t1 - t0:.4f} seconds")
 
-    # t2 = time.perf_counter()
-    # model.simulate_w_plot()
-    # sim_length = 100
-    # for i in range(sim_length):
-    model.simulate()
-    #    model.grid.reset_cars()
-    #    print(f"Simulating: {i/sim_length*100:.2f}%", end="\r", flush=True)
-    # t3 = time.perf_counter()
-    # print(f"Simulation (with plotting) took {t3 - t2:.4f} seconds")
-
-    # model.run_many_sims(num_sims=30)
-    # model.plot_traffic_heatmap()
-    # model.plot_car_count_heatmap()
-    # t4 = time.perf_counter()
-
-    # model.grid.reset_cars()
-
-    # t5 = time.perf_counter()
-    # print(f"Car reset took {t5 - t4:.4f} seconds")
+    # model.simulate_w_plot(car_stats=True)
+    model.simulate(car_stats=True)
 
 if __name__ == "__main__":
     main()

@@ -294,5 +294,3 @@ class Car:
         if self.position == self.destination:
             self.reached = True
             current_cell.leaving(current_step)
-
-
